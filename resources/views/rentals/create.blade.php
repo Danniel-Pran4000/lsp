@@ -81,13 +81,20 @@
                 @if ($garages->isEmpty())
                     <p role="status">Tidak ada unit {{ $garageLabels[$selectedGarageType] }} yang tersedia selama periode ini.</p>
                 @else
-                    <label for="garage-id">Pilih unit yang tersedia</label>
-                    <select id="garage-id" name="garage_id">
-                        <option value="">Pilih kode unit</option>
-                        @foreach ($garages as $garage)
-                            <option value="{{ $garage->id }}">{{ $garage->code }}</option>
+                    <form method="post" action="{{ route('rentals.preview') }}">
+                        @csrf
+                        @foreach ($details as $field => $value)
+                            <input type="hidden" name="{{ $field }}" value="{{ $value }}">
                         @endforeach
-                    </select>
+                        <label for="garage-id">Pilih unit yang tersedia</label>
+                        <select id="garage-id" name="garage_id" required>
+                            <option value="">Pilih kode unit</option>
+                            @foreach ($garages as $garage)
+                                <option value="{{ $garage->id }}">{{ $garage->code }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit">Lihat rincian biaya</button>
+                    </form>
                 @endif
             @endisset
         </section>

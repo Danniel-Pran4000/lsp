@@ -31,8 +31,12 @@ class PlanRentalRequest extends FormRequest
             'days' => ['required', 'integer', $days],
         ];
 
-        if ($this->routeIs('rentals.available')) {
+        if ($this->routeIs('rentals.available', 'rentals.preview')) {
             $rules['garage_type'] = ['required', 'in:S,C,E'];
+        }
+
+        if ($this->routeIs('rentals.preview')) {
+            $rules['garage_id'] = ['required', 'integer', 'min:1'];
         }
 
         return $rules;

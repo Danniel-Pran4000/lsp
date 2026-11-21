@@ -3,6 +3,7 @@
 
 @section('content')
     <p><a href="{{ route('garages.create') }}">Buat unit garasi</a></p>
+    <p><a href="{{ route('extensions.create') }}">Perpanjang sewa</a></p>
     <p>Periksa KTP secara manual sebelum mengambil keputusan.</p>
     <div class="table">
         <table>
