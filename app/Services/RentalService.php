@@ -18,6 +18,11 @@ use Throwable;
 
 class RentalService
 {
+    public function availableToday(CarbonImmutable $today): Builder
+    {
+        return Garage::query()->whereNotIn('id', $this->overlappingRentals($today, $today)->select('garage_id'));
+    }
+
     /** @return Collection<int, Garage> */
     public function availableUnits(string $type, CarbonImmutable $start, CarbonImmutable $end): Collection
     {
@@ -35,7 +40,7 @@ class RentalService
 
         $occupied = $this->overlappingRentals($start, $end)->select('garage_id');
 
-        return $garages->whereNotIn('id', $activeToday)
+        return $this->availableToday($today)->where('type', $type)
             ->whereNotIn('id', $occupied)
             ->orderBy('code')->get();
     }

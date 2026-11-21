@@ -47,6 +47,7 @@ Route::middleware(['auth', EnsureAdmin::class])->group(function () {
     Route::patch('/admin/users/{user}', [RegistrationController::class, 'verify'])->name('registration.verify');
     Route::get('/admin/registrations', fn (): RedirectResponse => to_route('registration.index'));
     Route::patch('/admin/registrations/{user}', [RegistrationController::class, 'verify']);
+    Route::get('/admin/garages', [GarageController::class, 'index'])->name('garages.index');
     Route::get('/admin/garages/create', [GarageController::class, 'create'])->name('garages.create');
     Route::post('/admin/garages', [GarageController::class, 'storeBatch'])->name('garages.store-batch');
     Route::get('/admin/extensions', [ExtensionController::class, 'activeRentals'])->name('extensions.create');

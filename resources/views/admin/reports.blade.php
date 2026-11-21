@@ -44,7 +44,7 @@
                     <select class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" name="user_id">
                         <option value="">All renters</option>
                         @foreach ($renters as $renter)
-                            <option value="{{ $renter->id }}" @selected($userId === $renter->id)>{{ $renter->name }} (#{{ $renter->id }})</option>
+                            <option value="{{ $renter->id }}" @selected($userId === $renter->id)>{{ $renter->name }}</option>
                         @endforeach
                     </select>
                 </label>

@@ -32,7 +32,8 @@
         <nav class="mx-auto mt-5 flex max-w-7xl gap-5 overflow-x-auto bg-transparent px-5 sm:gap-8 sm:px-8" aria-label="Main navigation">
             @if (auth()->user()->role === 'admin')
                 <a class="{{ request()->routeIs('registration.index') ? $activeTab : $inactiveTab }}" href="{{ route('registration.index') }}">Users</a>
-                <a class="{{ request()->routeIs('admin.rentals', 'garages.*', 'extensions.*') ? $activeTab : $inactiveTab }}" href="{{ route('admin.rentals') }}">Rent</a>
+                <a class="{{ request()->routeIs('admin.rentals', 'garages.create', 'extensions.*') ? $activeTab : $inactiveTab }}" href="{{ route('admin.rentals') }}">Rent</a>
+                <a class="{{ request()->routeIs('garages.index') ? $activeTab : $inactiveTab }}" href="{{ route('garages.index') }}" @if(request()->routeIs('garages.index')) aria-current="page" @endif>Garage</a>
                 <a class="{{ request()->routeIs('reports.*') ? $activeTab : $inactiveTab }}" href="{{ route('reports.index') }}">Reports</a>
             @else
                 <a class="{{ $activeTab }}" href="{{ route('rentals.index') }}" @if(request()->routeIs('rentals.index')) aria-current="page" @endif>My rentals</a>

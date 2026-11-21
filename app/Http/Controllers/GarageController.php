@@ -4,14 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGarageBatchRequest;
 use App\Models\Garage;
+use App\Services\RentalService;
+use App\Support\TypeFilter;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class GarageController extends Controller
 {
+    private const TYPES = ['S' => 'Bicycle', 'C' => 'Petrol car', 'E' => 'Electric car'];
+
+    public function index(Request $request, RentalService $rentals): View
+    {
+        $types = self::TYPES;
+        $query = $rentals->availableToday(CarbonImmutable::today());
+        $selectedType = TypeFilter::apply($query, 'type', $request->query('type'), $types);
+        $garages = $query->orderBy('code')->paginate(20)->appends(['type' => $selectedType]);
+
+        return view('admin.garages', compact('garages', 'types', 'selectedType'));
+    }
+
     public function create(): View
     {
         return view('admin.garage-create', ['type' => old('type', 'S')]);
@@ -65,13 +81,7 @@ class GarageController extends Controller
             ]);
         }
 
-        $garageType = match ($type) {
-            'S' => 'Bicycle',
-            'C' => 'Petrol car',
-            'E' => 'Electric car',
-        };
-
         return to_route('admin.rentals')
-            ->with('status', $garageType.' garage units created. Unit codes: '.implode(', ', $codes).'.');
+            ->with('status', self::TYPES[$type].' garage units created. Unit codes: '.implode(', ', $codes).'.');
     }
 }
