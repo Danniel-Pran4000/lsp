@@ -1,47 +1,4 @@
-﻿@import 'tailwindcss';
+@import 'tailwindcss';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../resources/views/**/*.blade.php';
 @font-face { font-family: Poppins; src: url('./Poppins-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
-@layer base {
- body { @apply m-0 bg-stone-50 text-neutral-900; font-family: Poppins, sans-serif; }
- h1 { @apply text-2xl font-semibold tracking-tight; }
- h2 { @apply mt-8 mb-4 text-lg font-semibold; }
- p { @apply my-3 text-sm leading-6; }
- a { @apply text-red-700 hover:text-red-800; }
- label { @apply block my-4 text-sm font-medium text-neutral-700; }
- input:not([type=hidden]):not([type=radio]):not([type=checkbox]), select { @apply mt-2 block w-full max-w-lg rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700; }
- input[type=file] { @apply bg-stone-50; }
- button, .button { @apply inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 focus:outline-2 focus:outline-offset-2 focus:outline-red-700; }
- table { @apply w-full min-w-max text-left text-sm; }
- th { @apply border-b border-stone-200 bg-stone-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-stone-500; }
- td { @apply border-b border-stone-100 px-4 py-4 text-neutral-700; }
- dt { @apply mt-3 text-xs font-medium uppercase tracking-wide text-stone-500; }
- dd { @apply mt-1 text-sm text-neutral-900; }
- fieldset { @apply mt-4 rounded-lg border border-stone-200 p-4; }
- legend { @apply px-1 text-sm font-medium text-stone-600; }
-}
-@layer components {
- .site-header { @apply border-b border-stone-200 bg-white; }
- .header-inner { @apply mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8; }
- .brand { @apply flex items-center gap-3 text-lg font-semibold tracking-tight text-neutral-900 no-underline; }
- .brand-mark { @apply grid h-10 w-10 place-items-center rounded-xl bg-red-700 text-lg font-semibold text-white; }
- .brand-accent { @apply text-red-700; }
- .identity { @apply flex items-center gap-3; }
- .identity-text { @apply hidden text-xs sm:grid; }
- .identity-text small { @apply mt-1 text-stone-500; }
- .avatar { @apply grid h-9 w-9 place-items-center rounded-full bg-red-50 text-sm font-semibold text-red-700; }
- .signout { @apply border border-stone-200 bg-white px-3 py-2 text-neutral-700 hover:bg-stone-50; }
- .navigation { @apply border-b border-stone-200 bg-white; }
- .nav-inner { @apply mx-auto flex max-w-7xl gap-8 overflow-x-auto px-5 sm:px-8; }
- .nav-inner a { @apply whitespace-nowrap border-b-2 border-transparent py-4 text-sm font-medium text-stone-500 no-underline hover:text-red-700; }
- .nav-inner a.active { @apply border-red-700 text-red-700; }
- .page { @apply mx-auto max-w-7xl px-5 py-9 sm:px-8; }
- .guest-page { @apply max-w-xl py-16; }
- .page-heading { @apply mb-6 flex flex-wrap items-center justify-between gap-4; }
- .page-heading p { @apply text-stone-500; }
- .panel { @apply rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7; }
- .table { @apply my-5 overflow-x-auto rounded-lg border border-stone-200; }
- .notice { @apply mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800; }
- .error { @apply mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800; }
- .error ul { @apply mt-2 list-inside list-disc; }
-}

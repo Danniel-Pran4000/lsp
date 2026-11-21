@@ -14,7 +14,7 @@ class GarageController extends Controller
 {
     public function create(): View
     {
-        return view('garages.create');
+        return view('admin.garage-create');
     }
 
     public function storeBatch(StoreGarageBatchRequest $request): RedirectResponse

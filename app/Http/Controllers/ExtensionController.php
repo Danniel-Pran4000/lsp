@@ -23,7 +23,7 @@ class ExtensionController extends Controller
             ->orderBy('ends_on')->orderBy('id')
             ->simplePaginate(20);
 
-        return view('extensions.create', compact('rentals'));
+        return view('admin.active-rentals', compact('rentals'));
     }
 
     public function preview(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): View|RedirectResponse
@@ -58,7 +58,7 @@ class ExtensionController extends Controller
             ]);
         }
 
-        return view('extensions.preview', compact('rental', 'earliestEnd', 'newEnd', 'charge', 'quoteId'));
+        return view('admin.rental-extend', compact('rental', 'earliestEnd', 'newEnd', 'charge', 'quoteId'));
     }
 
     public function store(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): RedirectResponse

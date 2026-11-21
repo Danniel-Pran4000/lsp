@@ -27,12 +27,12 @@ class RentalController extends Controller
             ->orderByDesc('starts_on')->orderByDesc('id')
             ->paginate(20);
 
-        return view('rentals.index', compact('rentals', 'garageCount'));
+        return view('user.rentals', compact('rentals', 'garageCount'));
     }
 
     public function create(PlanRentalRequest $request, RentalCalculator $calculator): View
     {
-        return view('rentals.create', $this->plan($request, $calculator));
+        return view('user.rental-create', $this->plan($request, $calculator));
     }
 
     public function available(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): View
@@ -45,7 +45,7 @@ class RentalController extends Controller
                 ->redirectTo(route('rentals.create'));
         }
 
-        return view('rentals.create', [
+        return view('user.rental-create', [
             ...$plan,
             'selectedGarageType' => $selectedGarageType,
             'garages' => $rentals->availableUnits($selectedGarageType, $plan['start'], $plan['end']),
@@ -107,7 +107,7 @@ class RentalController extends Controller
             'kwh_rate' => $charge['kwh_rate'],
         ]));
 
-        return view('rentals.preview', compact('garage', 'start', 'end', 'charge', 'quoteId'));
+        return view('user.rental-preview', compact('garage', 'start', 'end', 'charge', 'quoteId'));
     }
 
     public function store(StoreRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): RedirectResponse

@@ -12,7 +12,7 @@ class RegistrationController extends Controller
 {
     public function create(): View
     {
-        return view('registration.create');
+        return view('auth.register');
     }
 
     public function register(RegisterUserRequest $request): RedirectResponse
@@ -28,7 +28,7 @@ class RegistrationController extends Controller
             ->orderBy('id')
             ->simplePaginate(20);
 
-        return view('registration.index', compact('users'));
+        return view('admin.users', compact('users'));
     }
 
     public function verify(Request $request, User $user): RedirectResponse

@@ -86,7 +86,7 @@ class ReportController extends Controller
             ->orderByDesc('extensions.extended_on')->orderByDesc('extensions.id')
             ->simplePaginate(20, ['extensions.*'], 'extension_page')->appends($filters);
 
-        return view('reports.index', compact(
+        return view('admin.reports', compact(
             'mode', 'year', 'month', 'garageType', 'userId', 'monthNames', 'garageTypes', 'renters',
             'groups', 'rentalTotals', 'extensionTotals', 'rentalDetails', 'extensionDetails',
         ));

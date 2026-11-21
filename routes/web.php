@@ -12,7 +12,7 @@ use App\Http\Middleware\EnsureApprovedRenter;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.welcome');
 });
 
 Route::middleware('guest')->group(function () {

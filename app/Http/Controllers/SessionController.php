@@ -34,7 +34,7 @@ class SessionController extends Controller
 
     public function show(Request $request): View
     {
-        return view('auth.account', ['user' => $request->user()]);
+        return view('user.account', ['user' => $request->user()]);
     }
 
     public function destroy(Request $request): RedirectResponse
