@@ -8,4 +8,7 @@
         'rejected' => 'Pendaftaran ditolak.',
         default => 'Pendaftaran menunggu verifikasi admin.',
     } }}</p>
+    @if ($user->canRent())
+        <p><a href="{{ route('rentals.create') }}">Sewa baru</a></p>
+    @endif
 @endsection
