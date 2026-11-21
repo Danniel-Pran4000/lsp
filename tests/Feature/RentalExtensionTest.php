@@ -28,8 +28,31 @@ class RentalExtensionTest extends TestCase
             ->assertSee(route('extensions.preview', $active))
             ->assertDontSee(route('extensions.preview', $expired))
             ->assertDontSee(route('extensions.preview', $future));
-        $this->get(route('extensions.preview', $expired))
-            ->assertRedirect(route('extensions.create'))->assertSessionHasErrors('rental');
+        $this->get(route('admin.rentals'))
+            ->assertSee(route('extensions.preview', $active))
+            ->assertSee(route('extensions.preview', $expired))
+            ->assertSee(route('extensions.preview', $future));
+    }
+
+    public function test_admin_can_extend_finished_and_upcoming_rentals(): void
+    {
+        Storage::fake('local');
+        $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
+        $admin = User::factory()->create(['role' => 'admin']);
+        $finished = $this->rental(['ends_on' => '2026-11-20']);
+        $upcoming = $this->rental(['starts_on' => '2026-11-25', 'ends_on' => '2026-11-26']);
+
+        $this->actingAs($admin);
+        foreach ([[$finished, '2026-11-22'], [$upcoming, '2026-11-28']] as [$rental, $newEnd]) {
+            $quote = $this->get(route('extensions.preview', ['rental' => $rental, 'ends_on' => $newEnd]))
+                ->assertOk()->assertSee('IDR 80.000')->viewData('quoteId');
+            $this->post(route('extensions.store', $rental), ['quote_id' => $quote, 'proof' => $this->proofImage()])
+                ->assertRedirect(route('admin.rentals'));
+            $this->assertSame($newEnd, $rental->refresh()->ends_on);
+        }
+
+        $this->assertSame('used', $finished->garage->status);
+        $this->assertSame('available', $upcoming->garage->status);
     }
 
     public function test_admin_extends_a_monthly_electric_rental_using_its_original_daily_rate(): void
@@ -57,7 +80,8 @@ class RentalExtensionTest extends TestCase
             ->assertRedirect($url)->assertSessionHasErrors('proof');
         $this->post(route('extensions.store', $rental), [
             'quote_id' => $quote, 'proof' => $this->proofImage(), 'amount' => 1,
-        ])->assertRedirect(route('extensions.create'))->assertSessionHas('status');
+        ])->assertRedirect(route('admin.rentals'))
+            ->assertSessionHas('status', 'Rental for Merek uji Model uji extended. Unit E001.');
 
         $this->assertDatabaseHas('extensions', [
             'rental_id' => $rental->id, 'admin_id' => $admin->id, 'extended_on' => '2026-11-21',

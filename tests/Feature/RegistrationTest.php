@@ -55,7 +55,8 @@ class RegistrationTest extends TestCase
             'email' => $admin->email,
             'password' => 'password',
         ])->assertRedirect(route('registration.index'));
-        $this->patch(route('registration.verify', $first), ['decision' => 'approved'])->assertRedirect();
+        $this->patch(route('registration.verify', $first), ['decision' => 'approved'])
+            ->assertRedirect(route('registration.index'))->assertSessionHas('status', "{$first->name} approved.");
         $this->patch(route('registration.verify', $second), ['decision' => 'rejected'])->assertRedirect();
         $this->assertTrue($first->refresh()->canRent());
         $this->assertFalse($second->refresh()->canRent());

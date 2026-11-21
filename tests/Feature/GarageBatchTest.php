@@ -21,26 +21,26 @@ class GarageBatchTest extends TestCase
             'quantity' => 2,
             'daily_rate' => '10000',
             'kwh_rate' => '2000',
-        ])->assertRedirect(route('garages.create'))
-            ->assertSessionHas('garage_codes', ['S001', 'S002']);
+        ])->assertRedirect(route('admin.rentals'))
+            ->assertSessionHas('status', 'Bicycle garage units created. Unit codes: S001, S002.');
 
-        $this->get(route('garages.create'))->assertSee('S001, S002');
+        $this->get(route('admin.rentals'))->assertSee('S001, S002');
         $this->post(route('garages.store-batch'), [
             'type' => 'C',
             'quantity' => 1,
             'daily_rate' => '40000',
-        ])->assertSessionHas('garage_codes', ['C001']);
+        ])->assertSessionHas('status', 'Petrol car garage units created. Unit codes: C001.');
         $this->post(route('garages.store-batch'), [
             'type' => 'E',
             'quantity' => 1,
             'daily_rate' => '50000',
             'kwh_rate' => '2000.25',
-        ])->assertSessionHas('garage_codes', ['E001']);
+        ])->assertSessionHas('status', 'Electric car garage units created. Unit codes: E001.');
         $this->post(route('garages.store-batch'), [
             'type' => 'S',
             'quantity' => 1,
             'daily_rate' => '12000',
-        ])->assertSessionHas('garage_codes', ['S003']);
+        ])->assertSessionHas('status', 'Bicycle garage units created. Unit codes: S003.');
 
         $this->assertDatabaseHas('garages', [
             'code' => 'S001', 'type' => 'S', 'daily_rate' => 10000,
@@ -63,7 +63,7 @@ class GarageBatchTest extends TestCase
             'quantity' => 2,
             'daily_rate' => 42000,
         ])->assertRedirect(route('garages.create'))
-            ->assertSessionHasErrors(['quantity' => 'Kapasitas kode tipe C tersisa 1 unit.']);
+            ->assertSessionHasErrors(['quantity' => 'Remaining unit codes for garage type C: 1.']);
         $this->assertDatabaseCount('garages', 1);
         $this->assertDatabaseMissing('garages', ['code' => 'C999']);
 
@@ -71,7 +71,7 @@ class GarageBatchTest extends TestCase
             'type' => 'C',
             'quantity' => 1,
             'daily_rate' => 42000,
-        ])->assertSessionHas('garage_codes', ['C999']);
+        ])->assertSessionHas('status', 'Petrol car garage units created. Unit codes: C999.');
         $this->assertDatabaseCount('garages', 2);
     }
 

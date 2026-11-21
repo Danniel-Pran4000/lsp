@@ -42,7 +42,7 @@
     <main class="mx-auto px-5 sm:px-8 @guest max-w-xl py-16 @else max-w-7xl py-9 @endguest">
         @if (session('status')) <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800" role="status">{{ session('status') }}</div> @endif
         @if ($errors->any()) <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert"><strong>Please check the following</strong><ul class="mt-2 list-inside list-disc">@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div> @endif
-        @unless (request()->routeIs('admin.rentals')) <div class="mb-6 flex flex-wrap items-center justify-between gap-4"><div><h1 class="text-2xl font-semibold tracking-tight">@yield('title')</h1></div></div> @endunless
+        <h1 class="mb-6 text-2xl font-semibold tracking-tight">@yield('title')</h1>
         <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">@yield('content')</div>
     </main>
 </body>

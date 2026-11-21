@@ -35,12 +35,12 @@ class RegistrationController extends Controller
     {
         abort_unless($user->role === 'user', 404);
 
-        $decision = $request->validate(['decision' => ['required', 'in:approved,rejected']]);
+        ['decision' => $decision] = $request->validate(['decision' => ['required', 'in:approved,rejected']]);
 
         User::whereKey($user->id)->where('role', 'user')->update([
-            'approval_status' => $decision['decision'],
+            'approval_status' => $decision,
         ]);
 
-        return to_route('registration.index')->with('status', 'User status updated.');
+        return to_route('registration.index')->with('status', "{$user->name} {$decision}.");
     }
 }

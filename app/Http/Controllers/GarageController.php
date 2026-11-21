@@ -14,12 +14,18 @@ class GarageController extends Controller
 {
     public function create(): View
     {
-        return view('admin.garage-create');
+        return view('admin.garage-create', ['type' => old('type', 'S')]);
     }
 
     public function storeBatch(StoreGarageBatchRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        if (isset($data['type_selection'])) {
+            return to_route('garages.create')->withInput([
+                ...$request->only('quantity', 'daily_rate', 'kwh_rate'),
+                'type' => $data['type_selection'],
+            ]);
+        }
         $type = $data['type'];
         $quantity = (int) $data['quantity'];
         // Kode berawalan sama dengan tiga digit dapat diurutkan sebagai teks.
@@ -32,7 +38,7 @@ class GarageController extends Controller
 
                 if ($quantity > $remaining) {
                     throw ValidationException::withMessages([
-                        'quantity' => "Kapasitas kode tipe {$type} tersisa {$remaining} unit.",
+                        'quantity' => "Remaining unit codes for garage type {$type}: {$remaining}.",
                     ]);
                 }
 
@@ -55,12 +61,17 @@ class GarageController extends Controller
             $remaining = 999 - (int) substr($garagesOfType->max('code') ?? '', 1);
 
             throw ValidationException::withMessages([
-                'quantity' => "Kode sudah dipakai oleh batch lain. Kapasitas tersisa {$remaining} unit. Periksa jumlah dan coba lagi.",
+                'quantity' => "Another batch used these codes. {$remaining} unit codes remain. Check the quantity and try again.",
             ]);
         }
 
-        return to_route('garages.create')
-            ->with('status', "Berhasil membuat {$quantity} unit garasi.")
-            ->with('garage_codes', $codes);
+        $garageType = match ($type) {
+            'S' => 'Bicycle',
+            'C' => 'Petrol car',
+            'E' => 'Electric car',
+        };
+
+        return to_route('admin.rentals')
+            ->with('status', $garageType.' garage units created. Unit codes: '.implode(', ', $codes).'.');
     }
 }

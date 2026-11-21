@@ -24,7 +24,7 @@ class ReportTest extends TestCase
         $this->rental($renter, $garage, '2025-11-01', '2025-11-03', 999000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'monthly', 'year' => 2026]))
-            ->assertOk()->assertSee('Januari')->assertSee('Desember')
+            ->assertOk()->assertSee('January')->assertSee('December')->assertSee('No.')->assertDontSee('Rental ID')
             ->assertSee('IDR 309.000')->assertSee('IDR 225.000')->assertDontSee('IDR 999.000');
 
         $this->assertCount(12, $report->viewData('groups'));
@@ -49,7 +49,7 @@ class ReportTest extends TestCase
         $this->payment($rental, $admin, '2028-03-01', 80000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'daily', 'year' => 2028, 'month' => 2]))
-            ->assertOk()->assertSee('01 Februari')->assertSee('29 Februari')
+            ->assertOk()->assertSee('01 February')->assertSee('29 February')
             ->assertSee('IDR 30.000')->assertSee('IDR 10.000')->assertDontSee('IDR 80.000');
 
         $this->assertCount(29, $report->viewData('groups'));

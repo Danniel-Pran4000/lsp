@@ -161,7 +161,7 @@ class RentalController extends Controller
 
         $request->session()->forget('rental_quote');
 
-        return to_route('rentals.index')->with('status', "Rental #{$rental->id} saved. Unit {$rental->garage->code}, {$rental->starts_on} to {$rental->ends_on}.");
+        return to_route('rentals.index')->with('status', "Rental for {$rental->brand} {$rental->vehicle_model} saved. Unit {$rental->garage->code}.");
     }
 
     private function plan(PlanRentalRequest $request, RentalCalculator $calculator): array

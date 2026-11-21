@@ -23,10 +23,10 @@ class ReportController extends Controller
         $garageType = $filters['garage_type'] ?? null;
         $userId = isset($filters['user_id']) ? (int) $filters['user_id'] : null;
         $monthNames = [
-            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+            1 => 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
         ];
-        $garageTypes = ['S' => 'Sepeda', 'C' => 'Mobil bensin', 'E' => 'Mobil listrik'];
+        $garageTypes = ['S' => 'Bicycle', 'C' => 'Petrol car', 'E' => 'Electric car'];
         $renters = collect();
 
         $rentals = Rental::query();

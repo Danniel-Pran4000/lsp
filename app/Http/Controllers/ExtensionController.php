@@ -28,11 +28,6 @@ class ExtensionController extends Controller
 
     public function preview(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): View|RedirectResponse
     {
-        $today = CarbonImmutable::today();
-        if (! $rental->isActiveOn($today)) {
-            return to_route('extensions.create')->withErrors(['rental' => 'This rental is not active today.']);
-        }
-
         $rental->load(['garage', 'user']);
         $earliestEnd = CarbonImmutable::parse($rental->ends_on)->addDay()->toDateString();
         $newEnd = $request->validated('ends_on');
@@ -41,7 +36,7 @@ class ExtensionController extends Controller
 
         if ($newEnd !== null) {
             try {
-                $charge = $rentals->extensionDetails($rental, CarbonImmutable::parse($newEnd), $calculator, $today);
+                $charge = $rentals->extensionDetails($rental, CarbonImmutable::parse($newEnd), $calculator);
             } catch (ValidationException $exception) {
                 return to_route('extensions.preview', $rental)
                     ->withErrors($exception->errors())->withInput(['ends_on' => $newEnd]);
@@ -72,15 +67,14 @@ class ExtensionController extends Controller
         }
 
         try {
-            $extension = $rentals->extend($request->user(), $rental, $quote, $request->file('proof'), $calculator);
+            $rentals->extend($request->user(), $rental, $quote, $request->file('proof'), $calculator);
         } catch (ValidationException $exception) {
             return to_route('extensions.preview', $rental)
                 ->withErrors($exception->errors())->withInput(['ends_on' => $quote['new_end']]);
         }
 
         $request->session()->forget('extension_quote');
-        $end = CarbonImmutable::parse($extension->new_end)->format('d/m/Y');
 
-        return to_route('extensions.create')->with('status', "Perpanjangan sewa #{$rental->id} berhasil disimpan sampai {$end}.");
+        return to_route('admin.rentals')->with('status', "Rental for {$rental->brand} {$rental->vehicle_model} extended. Unit {$rental->garage->code}.");
     }
 }

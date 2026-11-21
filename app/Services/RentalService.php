@@ -92,12 +92,8 @@ class RentalService
         });
     }
 
-    public function extensionDetails(Rental $rental, CarbonImmutable $newEnd, RentalCalculator $calculator, CarbonImmutable $today): array
+    public function extensionDetails(Rental $rental, CarbonImmutable $newEnd, RentalCalculator $calculator): array
     {
-        if (! $rental->isActiveOn($today)) {
-            throw ValidationException::withMessages(['ends_on' => 'Only rentals active today can be extended.']);
-        }
-
         $charge = $calculator->extensionCharge($rental, $newEnd);
         $additionalStart = CarbonImmutable::parse($rental->ends_on)->addDay();
 
@@ -115,7 +111,7 @@ class RentalService
     {
         return $this->saveWithProof($proof, 'extension-proofs', function (string $path) use ($admin, $rental, $quote, $calculator): Extension {
             // Gunakan urutan kunci yang sama dengan transaksi sewa baru.
-            Garage::query()->lockForUpdate()->findOrFail($rental->garage_id);
+            $garage = Garage::query()->lockForUpdate()->findOrFail($rental->garage_id);
             $currentRental = Rental::query()->lockForUpdate()->findOrFail($rental->id);
             abort_unless(User::find($admin->id)?->role === 'admin', 403);
 
@@ -125,7 +121,7 @@ class RentalService
 
             $today = CarbonImmutable::today();
             $newEnd = CarbonImmutable::parse($quote['new_end']);
-            $charge = $this->extensionDetails($currentRental, $newEnd, $calculator, $today);
+            $charge = $this->extensionDetails($currentRental, $newEnd, $calculator);
             if ($charge['amount'] !== $quote['amount']) {
                 throw ValidationException::withMessages(['ends_on' => 'The charge has changed. Recalculate the extension charge.']);
             }
@@ -142,6 +138,10 @@ class RentalService
 
             $currentRental->ends_on = $extension->new_end;
             $currentRental->save();
+            if ($currentRental->isActiveOn($today) && $garage->status !== 'used') {
+                $garage->status = 'used';
+                $garage->save();
+            }
 
             return $extension;
         });
