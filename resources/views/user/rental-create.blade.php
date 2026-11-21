@@ -4,20 +4,25 @@
 @section('content')
     <form method="post" action="{{ route('rentals.create') }}">
         @csrf
+        <input type="hidden" name="vehicle_category" value="{{ $vehicleCategory }}">
+        <input type="hidden" name="rental_type" value="{{ $rentalType }}">
+        {{-- Keep calculation as the default action when Enter is pressed in a field. --}}
+        <button type="submit" hidden>Calculate end date</button>
 
         <div class="grid gap-6 lg:grid-cols-2">
             <fieldset class="min-w-0 rounded-xl border border-stone-200 p-4 sm:p-5">
                 <legend class="px-2 text-sm font-semibold text-neutral-900">Vehicle details</legend>
                 <div class="space-y-4">
-                    <label class="block text-sm font-medium text-neutral-800">Vehicle category
-                        <select class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700" name="vehicle_category" required>
+                    <fieldset>
+                        <legend class="text-sm font-medium text-neutral-800">Vehicle category</legend>
+                        <div class="mt-2 flex flex-wrap gap-2">
                             @foreach ($vehicles as $category => $label)
-                                <option value="{{ $category }}" @selected($vehicleCategory === $category)>{{ $label }}</option>
+                                <button type="submit" name="vehicle_selection" value="{{ $category }}" formnovalidate
+                                    aria-pressed="{{ $vehicleCategory === $category ? 'true' : 'false' }}"
+                                    class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium hover:border-red-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 aria-pressed:border-red-700 aria-pressed:bg-red-50 aria-pressed:text-red-800">{{ $label }}</button>
                             @endforeach
-                        </select>
-                    </label>
-                    <button class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium hover:bg-stone-50" type="submit"
-                        name="action" value="apply_vehicle_category" formnovalidate>Apply vehicle category</button>
+                        </div>
+                    </fieldset>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="block text-sm font-medium text-neutral-800">Brand
@@ -58,24 +63,29 @@
                             value="{{ is_string(old('starts_on')) ? old('starts_on') : $start->toDateString() }}" required>
                     </label>
 
-                    <label class="block text-sm font-medium text-neutral-800">Rental type
-                        <select class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700" name="rental_type" required>
-                            <option value="daily" @selected(old('rental_type', $details['rental_type'] ?? '') === 'daily')>Daily</option>
-                            <option value="monthly" @selected(old('rental_type', $details['rental_type'] ?? '') === 'monthly')>Monthly</option>
-                        </select>
-                    </label>
+                    <fieldset>
+                        <legend class="text-sm font-medium text-neutral-800">Rental type</legend>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            @foreach (['daily' => 'Daily', 'monthly' => 'Monthly'] as $type => $label)
+                                <button type="submit" name="rental_type_selection" value="{{ $type }}" formnovalidate
+                                    aria-pressed="{{ $rentalType === $type ? 'true' : 'false' }}"
+                                    class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium hover:border-red-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 aria-pressed:border-red-700 aria-pressed:bg-red-50 aria-pressed:text-red-800">{{ $label }}</button>
+                            @endforeach
+                        </div>
+                    </fieldset>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="block text-sm font-medium text-neutral-800">Months
                             <span class="block text-xs text-stone-600">For monthly rentals only.</span>
-                            <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700" type="number" name="months" min="1" step="1" value="{{ old('months', $details['months'] ?? '') }}">
+                            <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" type="number" name="months" min="1" step="1"
+                                value="{{ $isMonthly ? old('months', $details['months'] ?? '') : '' }}" @disabled(! $isMonthly) @required($isMonthly)>
                         </label>
-                        <label class="block text-sm font-medium text-neutral-800">Days
-                            <span class="block text-xs text-stone-600">Extra days for monthly rentals.</span>
-                            <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700" type="number" name="days" min="0" step="1" value="{{ old('days', $details['days'] ?? '') }}" required>
+                        <label class="block text-sm font-medium text-neutral-800">{{ $isMonthly ? 'Extra days' : 'Days' }}
+                            <span class="block text-xs text-stone-600">{{ $isMonthly ? 'Optional. Leave blank for whole months.' : 'The limit depends on the start month.' }}</span>
+                            <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700" type="number" name="days"
+                                min="{{ $isMonthly ? 0 : 1 }}" step="1" value="{{ old('days', $details['days'] ?? '') }}" @required(! $isMonthly)>
                         </label>
                     </div>
-                    <p class="text-xs leading-5 text-stone-600">The daily limit depends on the start month.</p>
                 </div>
             </fieldset>
         </div>

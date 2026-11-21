@@ -13,7 +13,13 @@ class PlanRentalRequest extends FormRequest
     public function isUpdatingVehicleCategory(): bool
     {
         return $this->isMethod('post') && $this->routeIs('rentals.create')
-            && $this->input('action') === 'apply_vehicle_category';
+            && $this->has('vehicle_selection');
+    }
+
+    public function isUpdatingRentalType(): bool
+    {
+        return $this->isMethod('post') && $this->routeIs('rentals.create')
+            && $this->has('rental_type_selection');
     }
 
     public function rules(): array
@@ -24,13 +30,16 @@ class PlanRentalRequest extends FormRequest
 
         $vehicleCategory = ['required', 'in:bicycle,motorcycle,gas_car,electric_car'];
         if ($this->isUpdatingVehicleCategory()) {
-            return ['vehicle_category' => $vehicleCategory];
+            return ['vehicle_selection' => $vehicleCategory];
+        }
+        if ($this->isUpdatingRentalType()) {
+            return ['rental_type_selection' => ['required', 'in:daily,monthly']];
         }
 
         // Batasi input bulanan ke ukuran yang dapat diproses dalam rentang kolom DATE.
         $days = $this->input('rental_type') === 'monthly'
-            ? 'between:0,3652058'
-            : 'between:1,30';
+            ? ['nullable', 'integer', 'between:0,3652058']
+            : ['required', 'integer', 'between:1,30'];
 
         $rules = [
             'vehicle_category' => $vehicleCategory,
@@ -42,7 +51,7 @@ class PlanRentalRequest extends FormRequest
             'starts_on' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->toDateString()],
             'rental_type' => ['required', 'in:daily,monthly'],
             'months' => ['exclude_unless:rental_type,monthly', 'required', 'integer', 'between:1,119987'],
-            'days' => ['required', 'integer', $days],
+            'days' => $days,
         ];
 
         if ($this->routeIs('rentals.available', 'rentals.preview')) {
@@ -59,7 +68,8 @@ class PlanRentalRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if (! $this->isMethod('post') || $this->isUpdatingVehicleCategory() || $this->input('rental_type') !== 'daily'
+            if (! $this->isMethod('post') || $this->isUpdatingVehicleCategory() || $this->isUpdatingRentalType()
+                || $this->input('rental_type') !== 'daily'
                 || $validator->errors()->has('starts_on') || $validator->errors()->has('days')) {
                 return;
             }

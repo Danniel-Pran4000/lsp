@@ -51,7 +51,19 @@ class RentalController extends Controller
     public function create(PlanRentalRequest $request, RentalCalculator $calculator): View|RedirectResponse
     {
         if ($request->isUpdatingVehicleCategory()) {
-            return to_route('rentals.create')->withInput($request->except('_token', 'action'));
+            return to_route('rentals.create')->withInput([
+                ...$request->except('_token', 'vehicle_selection'),
+                'vehicle_category' => $request->validated('vehicle_selection'),
+            ]);
+        }
+        if ($request->isUpdatingRentalType()) {
+            $rentalType = $request->validated('rental_type_selection');
+            $inputs = $request->except('_token', 'rental_type_selection');
+            if ($rentalType !== $request->input('rental_type')) {
+                unset($inputs['days']);
+            }
+
+            return to_route('rentals.create')->withInput([...$inputs, 'rental_type' => $rentalType]);
         }
 
         return view('user.rental-create', $this->plan($request, $calculator));
@@ -161,6 +173,7 @@ class RentalController extends Controller
 
         if ($details !== []) {
             $details['starts_on'] = $start->toDateString();
+            $details['days'] = (int) ($details['days'] ?? 0);
             $end = $calculator->endDate($start, (int) ($details['months'] ?? 0), (int) $details['days']);
             if ($end->year > 9999) {
                 throw ValidationException::withMessages(['days' => 'The end date exceeds the supported date range.'])
@@ -175,10 +188,13 @@ class RentalController extends Controller
         }
 
         $vehicleCategory = $details['vehicle_category'] ?? $request->old('vehicle_category', 'bicycle');
+        $rentalType = $details['rental_type'] ?? $request->old('rental_type', 'daily');
 
         return [
             ...compact('start', 'end', 'details', 'garageTypes'),
             'vehicleCategory' => $vehicleCategory,
+            'rentalType' => $rentalType,
+            'isMonthly' => $rentalType === 'monthly',
             'needsPlate' => $vehicleCategory !== 'bicycle',
             'needsBattery' => $vehicleCategory === 'electric_car',
             'vehicles' => [

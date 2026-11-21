@@ -10,6 +10,25 @@ class RentalPlanTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_selecting_rental_type_updates_the_duration_fields_without_calculating(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
+
+        $this->actingAs($user)->followingRedirects()->post(route('rentals.create'), [
+            'rental_type' => 'daily',
+            'rental_type_selection' => 'monthly',
+            'brand' => 'Sample brand',
+            'days' => 3,
+        ])->assertOk()->assertViewHas('isMonthly', true)->assertSee('Extra days')
+            ->assertSee('value="Sample brand"', false)->assertDontSee('Find available units')
+            ->assertDontSee('step="1" value="3"', false);
+
+        $this->followingRedirects()->post(route('rentals.create'), [
+            'rental_type' => 'monthly',
+            'rental_type_selection' => 'daily',
+        ])->assertOk()->assertViewHas('isMonthly', false)->assertDontSee('Extra days');
+    }
+
     public function test_applying_a_vehicle_category_controls_the_fields_without_calculating(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
@@ -20,12 +39,12 @@ class RentalPlanTest extends TestCase
             'motorcycle' => false,
             'gas_car' => false,
             'electric_car' => true,
+            'bicycle' => false,
         ] as $category => $needsBattery) {
             $this->followingRedirects()->post(route('rentals.create'), [
-                'action' => 'apply_vehicle_category',
-                'vehicle_category' => $category,
+                'vehicle_selection' => $category,
                 'brand' => 'Sample brand',
-            ])->assertOk()->assertViewHas('needsPlate', true)->assertViewHas('needsBattery', $needsBattery)
+            ])->assertOk()->assertViewHas('needsPlate', $category !== 'bicycle')->assertViewHas('needsBattery', $needsBattery)
                 ->assertSee('value="Sample brand"', false)->assertDontSee('Find available units');
         }
     }
@@ -83,11 +102,13 @@ class RentalPlanTest extends TestCase
             'remaining_percent' => '0',
             'rental_type' => 'monthly',
             'months' => 1,
-            'days' => 0,
         ];
 
         $this->actingAs($user)->post(route('rentals.create'), $payload)
-            ->assertOk()->assertSee('29/02/2028')->assertViewHas('garageTypes', ['C', 'E']);
+            ->assertOk()->assertSee('29/02/2028')->assertViewHas('garageTypes', ['C', 'E'])
+            ->assertViewHas('details.days', 0);
+        $this->post(route('rentals.create'), [...$payload, 'days' => ''])
+            ->assertOk()->assertSee('29/02/2028')->assertViewHas('details.days', 0);
         $this->post(route('rentals.create'), array_replace($payload, ['months' => 2, 'days' => 3]))
             ->assertOk()->assertSee('03/04/2028');
     }
