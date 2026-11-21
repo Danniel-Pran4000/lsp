@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rental extends Model
 {
@@ -16,6 +17,11 @@ class Rental extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function extensions(): HasMany
+    {
+        return $this->hasMany(Extension::class);
     }
 
     public function isActiveOn(CarbonImmutable $date): bool

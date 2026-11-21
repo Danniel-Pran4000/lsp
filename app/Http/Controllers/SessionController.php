@@ -32,9 +32,11 @@ class SessionController extends Controller
             : to_route('rentals.index');
     }
 
-    public function show(Request $request): View
+    public function show(Request $request): RedirectResponse
     {
-        return view('user.account', ['user' => $request->user()]);
+        return $request->user()->role === 'admin'
+            ? to_route('registration.index')
+            : to_route('rentals.index');
     }
 
     public function destroy(Request $request): RedirectResponse

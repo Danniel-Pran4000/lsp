@@ -10,10 +10,21 @@ class PlanRentalRequest extends FormRequest
 {
     protected $redirectRoute = 'rentals.create';
 
+    public function isUpdatingVehicleCategory(): bool
+    {
+        return $this->isMethod('post') && $this->routeIs('rentals.create')
+            && $this->input('action') === 'apply_vehicle_category';
+    }
+
     public function rules(): array
     {
         if (! $this->isMethod('post')) {
             return [];
+        }
+
+        $vehicleCategory = ['required', 'in:bicycle,motorcycle,gas_car,electric_car'];
+        if ($this->isUpdatingVehicleCategory()) {
+            return ['vehicle_category' => $vehicleCategory];
         }
 
         // Batasi input bulanan ke ukuran yang dapat diproses dalam rentang kolom DATE.
@@ -22,7 +33,7 @@ class PlanRentalRequest extends FormRequest
             : 'between:1,30';
 
         $rules = [
-            'vehicle_category' => ['required', 'in:bicycle,motorcycle,gas_car,electric_car'],
+            'vehicle_category' => $vehicleCategory,
             'brand' => ['required', 'string', 'max:255'],
             'vehicle_model' => ['required', 'string', 'max:255'],
             'plate' => ['exclude_if:vehicle_category,bicycle', 'required', 'string', 'max:255'],
@@ -48,7 +59,7 @@ class PlanRentalRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if (! $this->isMethod('post') || $this->input('rental_type') !== 'daily'
+            if (! $this->isMethod('post') || $this->isUpdatingVehicleCategory() || $this->input('rental_type') !== 'daily'
                 || $validator->errors()->has('starts_on') || $validator->errors()->has('days')) {
                 return;
             }

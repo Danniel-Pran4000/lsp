@@ -10,6 +10,26 @@ class RentalPlanTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_applying_a_vehicle_category_controls_the_fields_without_calculating(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
+        $this->actingAs($user)->get(route('rentals.create'))
+            ->assertViewHas('needsPlate', false)->assertViewHas('needsBattery', false);
+
+        foreach ([
+            'motorcycle' => false,
+            'gas_car' => false,
+            'electric_car' => true,
+        ] as $category => $needsBattery) {
+            $this->followingRedirects()->post(route('rentals.create'), [
+                'action' => 'apply_vehicle_category',
+                'vehicle_category' => $category,
+                'brand' => 'Sample brand',
+            ])->assertOk()->assertViewHas('needsPlate', true)->assertViewHas('needsBattery', $needsBattery)
+                ->assertSee('value="Sample brand"', false)->assertDontSee('Find available units');
+        }
+    }
+
     public function test_future_start_uses_its_own_month_for_the_daily_limit(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
@@ -40,7 +60,8 @@ class RentalPlanTest extends TestCase
         ];
 
         $this->actingAs($user)->get(route('rentals.create'))
-            ->assertOk()->assertSee('21/11/2026');
+            ->assertOk()->assertSee('value="2026-11-21"', false)
+            ->assertDontSee('Find available units');
         $this->post(route('rentals.create'), $payload)
             ->assertOk()->assertSee('19/12/2026')->assertViewHas('garageTypes', ['S']);
         $this->post(route('rentals.create'), array_replace($payload, ['days' => 30]))

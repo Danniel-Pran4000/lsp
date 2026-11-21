@@ -7,6 +7,7 @@ use App\Http\Requests\StoreRentalRequest;
 use App\Models\Rental;
 use App\Services\RentalCalculator;
 use App\Services\RentalService;
+use Brick\Math\BigInteger;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,16 +23,37 @@ class RentalController extends Controller
         abort_unless($user->role === 'user', 403);
 
         $ownRentals = Rental::where('user_id', $user->id);
-        $garageCount = (clone $ownRentals)->distinct()->count('garage_id');
+        $today = CarbonImmutable::today()->toDateString();
+        $activeCount = (clone $ownRentals)
+            ->where('starts_on', '<=', $today)
+            ->where('ends_on', '>=', $today)
+            ->count();
+        $canCreateRental = $user->canRent();
         $rentals = $ownRentals->with('garage')
+            ->withSum('extensions', 'amount')
             ->orderByDesc('starts_on')->orderByDesc('id')
-            ->paginate(20);
+            ->paginate(20)
+            ->through(function (Rental $rental): array {
+                $total = BigInteger::of($rental->initial_total)->plus($rental->extensions_sum_amount ?? 0);
 
-        return view('user.rentals', compact('rentals', 'garageCount'));
+                return [
+                    'unit' => $rental->garage->code,
+                    'vehicle' => $rental->brand.' '.$rental->vehicle_model,
+                    'start' => CarbonImmutable::parse($rental->starts_on)->format('d M Y'),
+                    'end' => CarbonImmutable::parse($rental->ends_on)->format('d M Y'),
+                    'total' => 'IDR '.preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', (string) $total),
+                ];
+            });
+
+        return view('user.rentals', compact('rentals', 'activeCount', 'canCreateRental'));
     }
 
-    public function create(PlanRentalRequest $request, RentalCalculator $calculator): View
+    public function create(PlanRentalRequest $request, RentalCalculator $calculator): View|RedirectResponse
     {
+        if ($request->isUpdatingVehicleCategory()) {
+            return to_route('rentals.create')->withInput($request->except('_token', 'action'));
+        }
+
         return view('user.rental-create', $this->plan($request, $calculator));
     }
 
@@ -152,6 +174,20 @@ class RentalController extends Controller
             };
         }
 
-        return compact('start', 'end', 'details', 'garageTypes');
+        $vehicleCategory = $details['vehicle_category'] ?? $request->old('vehicle_category', 'bicycle');
+
+        return [
+            ...compact('start', 'end', 'details', 'garageTypes'),
+            'vehicleCategory' => $vehicleCategory,
+            'needsPlate' => $vehicleCategory !== 'bicycle',
+            'needsBattery' => $vehicleCategory === 'electric_car',
+            'vehicles' => [
+                'bicycle' => 'Bicycle',
+                'motorcycle' => 'Motorcycle',
+                'gas_car' => 'Petrol car',
+                'electric_car' => 'Electric car',
+            ],
+            'garageLabels' => ['S' => 'Bicycle (S)', 'C' => 'Petrol car (C)', 'E' => 'Electric car (E)'],
+        ];
     }
 }
