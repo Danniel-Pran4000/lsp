@@ -11,4 +11,7 @@
     @if ($user->canRent())
         <p><a href="{{ route('rentals.create') }}">Sewa baru</a></p>
     @endif
+    @if ($user->role === 'user')
+        <p><a href="{{ route('rentals.index') }}">Persewaan saya</a></p>
+    @endif
 @endsection

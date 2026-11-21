@@ -23,6 +23,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/account', [SessionController::class, 'show'])->name('account.show');
+    Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
     Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
 });
 

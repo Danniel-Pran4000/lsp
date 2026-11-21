@@ -4,16 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PlanRentalRequest;
 use App\Http\Requests\StoreRentalRequest;
+use App\Models\Rental;
 use App\Services\RentalCalculator;
 use App\Services\RentalService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RentalController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+        abort_unless($user->role === 'user', 403);
+
+        $ownRentals = Rental::where('user_id', $user->id);
+        $garageCount = (clone $ownRentals)->distinct()->count('garage_id');
+        $rentals = $ownRentals->with('garage')
+            ->orderByDesc('starts_on')->orderByDesc('id')
+            ->paginate(20);
+
+        return view('rentals.index', compact('rentals', 'garageCount'));
+    }
+
     public function create(PlanRentalRequest $request, RentalCalculator $calculator): View
     {
         return view('rentals.create', $this->plan($request, $calculator));
