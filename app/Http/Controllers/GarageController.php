@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreGarageBatchRequest;
 use App\Models\Garage;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -17,21 +17,9 @@ class GarageController extends Controller
         return view('garages.create');
     }
 
-    public function storeBatch(Request $request): RedirectResponse
+    public function storeBatch(StoreGarageBatchRequest $request): RedirectResponse
     {
-        $rateRules = ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999999999.99'];
-        $data = $request->validate([
-            'type' => ['required', 'in:S,C,E'],
-            'quantity' => ['required', 'integer', 'between:1,999'],
-            'daily_rate' => $rateRules,
-            'kwh_rate' => ['exclude_unless:type,E', ...$rateRules],
-        ], attributes: [
-            'type' => 'tipe garasi',
-            'quantity' => 'jumlah unit',
-            'daily_rate' => 'tarif harian',
-            'kwh_rate' => 'tarif per kWh',
-        ]);
-
+        $data = $request->validated();
         $type = $data['type'];
         $quantity = (int) $data['quantity'];
         // Kode berawalan sama dengan tiga digit dapat diurutkan sebagai teks.
