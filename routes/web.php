@@ -9,10 +9,16 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureApprovedRenter;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('auth.welcome');
+Route::get('/', function (Request $request): RedirectResponse {
+    return to_route(match ($request->user()?->role) {
+        'admin' => 'registration.index',
+        'user' => 'rentals.index',
+        default => 'login',
+    });
 });
 
 Route::middleware('guest')->group(function () {

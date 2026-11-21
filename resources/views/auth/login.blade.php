@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+@extends('layouts.welcome-design')
 @section('title', 'Sign in')
 
 @section('content')

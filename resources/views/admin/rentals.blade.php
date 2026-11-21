@@ -1,4 +1,4 @@
-@extends('layouts.account')
+@extends('layouts.header')
 @section('title', 'Rentals')
 @section('content')
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4"><div><h1 class="text-2xl font-semibold tracking-tight">Rentals</h1><p class="my-3 text-sm leading-6">View and manage rental records.</p></div><a class="inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" href="{{ route('garages.create') }}">Create garage units</a></div>

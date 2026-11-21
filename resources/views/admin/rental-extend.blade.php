@@ -1,4 +1,4 @@
-@extends('layouts.account')
+@extends('layouts.header')
 @section('title', 'Extend rental')
 
 @section('content')

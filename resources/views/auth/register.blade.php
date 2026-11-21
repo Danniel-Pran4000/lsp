@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+@extends('layouts.welcome-design')
 @section('title', 'Create an account')
 
 @section('content')
@@ -9,26 +9,26 @@
         @csrf
 
         <div>
-            <label for="name" class="block text-sm font-medium text-neutral-900">Full name</label>
-            <input id="name" name="name" autocomplete="name" value="{{ old('name') }}"
+            <label for="nik" class="block text-sm font-medium text-neutral-900">National ID (NIK)</label>
+            <p id="nik-hint" class="mt-1 text-xs leading-5 text-stone-600">Enter your 16-digit ID number.</p>
+            <input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" value="{{ old('nik') }}"
                 class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-4 py-3 text-base text-neutral-900 focus:border-red-700 focus:outline-2 focus:outline-red-700 sm:text-sm"
-                @error('name') aria-describedby="name-error" @enderror
-                @error('name') aria-invalid="true" @enderror required>
-            @error('name')
-                <p id="name-error" class="mt-2 text-sm text-red-800" role="alert">{{ $message }}</p>
+                aria-describedby="nik-hint @error('nik') nik-error @enderror"
+                @error('nik') aria-invalid="true" @enderror required>
+            @error('nik')
+                <p id="nik-error" class="mt-2 text-sm text-red-800" role="alert">{{ $message }}</p>
             @enderror
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2">
             <div>
-                <label for="nik" class="block text-sm font-medium text-neutral-900">National ID (NIK)</label>
-                <p id="nik-hint" class="mt-1 text-xs leading-5 text-stone-600">Enter your 16-digit ID number.</p>
-                <input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" value="{{ old('nik') }}"
+                <label for="name" class="block text-sm font-medium text-neutral-900">Full name</label>
+                <input id="name" name="name" autocomplete="name" value="{{ old('name') }}"
                     class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-4 py-3 text-base text-neutral-900 focus:border-red-700 focus:outline-2 focus:outline-red-700 sm:text-sm"
-                    aria-describedby="nik-hint @error('nik') nik-error @enderror"
-                    @error('nik') aria-invalid="true" @enderror required>
-                @error('nik')
-                    <p id="nik-error" class="mt-2 text-sm text-red-800" role="alert">{{ $message }}</p>
+                    @error('name') aria-describedby="name-error" @enderror
+                    @error('name') aria-invalid="true" @enderror required>
+                @error('name')
+                    <p id="name-error" class="mt-2 text-sm text-red-800" role="alert">{{ $message }}</p>
                 @enderror
             </div>
 
