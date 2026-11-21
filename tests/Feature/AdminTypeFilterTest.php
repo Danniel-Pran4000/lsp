@@ -41,11 +41,13 @@ class AdminTypeFilterTest extends TestCase
         $this->assertSame('used', $past->refresh()->status);
     }
 
-    public function test_rentals_filter_uses_vehicle_category_and_keeps_the_selection_on_page_two(): void
+    public function test_rentals_filter_uses_the_assigned_garage_type_and_keeps_the_selection_on_page_two(): void
     {
         $renter = User::factory()->create(['role' => 'user']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 50000]);
-        $bike = $this->rental($renter, $garage, 'bicycle', '2026-11-01', '2026-11-02');
+        $bike = $this->rental($renter, $garage, 'bicycle', '2026-11-24', '2026-11-25');
+        $petrolGarage = Garage::create(['code' => 'C001', 'type' => 'C', 'daily_rate' => 75000]);
+        $electricCar = $this->rental($renter, $petrolGarage, 'electric_car', '2026-11-26', '2026-11-26');
         for ($day = 3; $day <= 23; $day++) {
             $date = sprintf('2026-11-%02d', $day);
             $latestMotorcycle = $this->rental($renter, $garage, 'motorcycle', $date, $date);
@@ -53,15 +55,16 @@ class AdminTypeFilterTest extends TestCase
 
         $bikeLink = 'href="'.route('extensions.preview', $bike).'"';
         $motorcycleLink = 'href="'.route('extensions.preview', $latestMotorcycle).'"';
-        $pageTwo = route('admin.rentals', ['type' => 'motorcycle', 'page' => 2]);
+        $carLink = 'href="'.route('extensions.preview', $electricCar).'"';
+        $pageTwo = route('admin.rentals', ['type' => 'S', 'page' => 2]);
         $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->get(route('admin.rentals', ['type' => 'motorcycle']))
-            ->assertOk()->assertSee($pageTwo)
-            ->assertSee($motorcycleLink, false)->assertDontSee($bikeLink, false);
+            ->get(route('admin.rentals', ['type' => 'S']))
+            ->assertOk()->assertSee('Garage type')->assertSee($pageTwo)
+            ->assertSee($motorcycleLink, false)->assertSee($bikeLink, false)->assertDontSee($carLink, false);
         $this->get($pageTwo)
-            ->assertOk()->assertSee('2026-11-03')->assertDontSee($bikeLink, false);
-        $this->get(route('admin.rentals', ['type' => 'bicycle']))
-            ->assertOk()->assertSee($bikeLink, false)->assertDontSee($motorcycleLink, false);
+            ->assertOk()->assertSee('2026-11-03')->assertDontSee($carLink, false);
+        $this->get(route('admin.rentals', ['type' => 'C']))
+            ->assertOk()->assertSee($carLink, false)->assertDontSee($bikeLink, false);
     }
 
     private function rental(User $renter, Garage $garage, string $category, string $start, string $end): Rental

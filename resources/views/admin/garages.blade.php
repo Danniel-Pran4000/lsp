@@ -4,7 +4,7 @@
 @section('content')
     <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
         <p class="text-sm text-stone-600">Available units today</p>
-        @include('layouts.type-filter', ['filterRoute' => 'garages.index', 'filterLabel' => 'Garage type'])
+        @include('layouts.type-filter', ['filterRoute' => 'garages.index'])
     </div>
 
     <div class="overflow-x-auto rounded-xl border border-stone-200">

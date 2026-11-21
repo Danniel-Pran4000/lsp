@@ -1,6 +1,6 @@
 <form action="{{ route($filterRoute) }}" method="get" class="flex flex-wrap items-end gap-2">
     <div>
-        <label for="type" class="mb-1 block text-sm font-medium">{{ $filterLabel }}</label>
+        <label for="type" class="sr-only">Garage type</label>
         <select id="type" name="type" class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-red-700 focus:outline-red-700">
             <option value="">All types</option>
             @foreach ($types as $value => $label)

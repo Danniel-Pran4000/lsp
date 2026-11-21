@@ -16,13 +16,11 @@ use Illuminate\View\View;
 
 class GarageController extends Controller
 {
-    private const TYPES = ['S' => 'Bicycle', 'C' => 'Petrol car', 'E' => 'Electric car'];
-
     public function index(Request $request, RentalService $rentals): View
     {
-        $types = self::TYPES;
+        $types = Garage::TYPE_LABELS;
         $query = $rentals->availableToday(CarbonImmutable::today());
-        $selectedType = TypeFilter::apply($query, 'type', $request->query('type'), $types);
+        $selectedType = TypeFilter::apply($query, $request->query('type'));
         $garages = $query->orderBy('code')->paginate(20)->appends(['type' => $selectedType]);
 
         return view('admin.garages', compact('garages', 'types', 'selectedType'));
@@ -82,6 +80,6 @@ class GarageController extends Controller
         }
 
         return to_route('admin.rentals')
-            ->with('status', self::TYPES[$type].' garage units created. Unit codes: '.implode(', ', $codes).'.');
+            ->with('status', Garage::TYPE_LABELS[$type].' garage units created. Unit codes: '.implode(', ', $codes).'.');
     }
 }

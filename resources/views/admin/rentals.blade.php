@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
-        @include('layouts.type-filter', ['filterRoute' => 'admin.rentals', 'filterLabel' => 'Vehicle type'])
+        @include('layouts.type-filter', ['filterRoute' => 'admin.rentals'])
         <a class="inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" href="{{ route('garages.create') }}">Create garage units</a>
     </div>
 
@@ -35,7 +35,7 @@
                                     <div>
                                         <dt class="text-stone-600">Vehicle</dt>
                                         <dd class="font-semibold">{{ $rental->brand }} {{ $rental->vehicle_model }}</dd>
-                                        <dd>{{ $types[$rental->vehicle_category] ?? $rental->vehicle_category }}</dd>
+                                        <dd>{{ $vehicleTypes[$rental->vehicle_category] ?? $rental->vehicle_category }}</dd>
                                     </div>
                                     <div>
                                         <dt class="text-stone-600">Initial payment</dt>

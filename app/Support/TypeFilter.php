@@ -2,17 +2,22 @@
 
 namespace App\Support;
 
+use App\Models\Garage;
 use Illuminate\Database\Eloquent\Builder;
 
 class TypeFilter
 {
-    public static function apply(Builder $query, string $column, mixed $selection, array $options): ?string
+    public static function apply(Builder $query, mixed $selection, ?string $garageRelation = null): ?string
     {
-        if (! is_string($selection) || ! array_key_exists($selection, $options)) {
+        if (! is_string($selection) || ! array_key_exists($selection, Garage::TYPE_LABELS)) {
             return null;
         }
 
-        $query->where($column, $selection);
+        if ($garageRelation === null) {
+            $query->where('type', $selection);
+        } else {
+            $query->whereRelation($garageRelation, 'type', $selection);
+        }
 
         return $selection;
     }
