@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminRentalController;
 use App\Http\Controllers\ExtensionController;
 use App\Http\Controllers\GarageController;
 use App\Http\Controllers\RegistrationController;
@@ -35,6 +36,7 @@ Route::middleware(['auth', EnsureApprovedRenter::class])->group(function () {
 });
 
 Route::middleware(['auth', EnsureAdmin::class])->group(function () {
+    Route::get('/admin/rentals', [AdminRentalController::class, 'index'])->name('admin.rentals');
     Route::get('/admin/registrations', [RegistrationController::class, 'index'])->name('registration.index');
     Route::patch('/admin/registrations/{user}', [RegistrationController::class, 'verify'])->name('registration.verify');
     Route::get('/admin/garages/create', [GarageController::class, 'create'])->name('garages.create');

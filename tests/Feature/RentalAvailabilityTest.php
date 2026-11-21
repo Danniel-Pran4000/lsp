@@ -52,9 +52,9 @@ class RentalAvailabilityTest extends TestCase
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
 
         $this->actingAs($user)->post(route('rentals.create'), $this->searchInput())
-            ->assertOk()->assertSee('Cari unit');
+            ->assertOk()->assertSee('Find available units');
         $this->post(route('rentals.available'), $this->searchInput())
-            ->assertOk()->assertSee('Tidak ada unit Sepeda (S) yang tersedia selama periode ini.');
+            ->assertOk()->assertSee('No units of type Bicycle (S) are available for this period.');
         $this->post(route('rentals.available'), array_replace($this->searchInput(), ['garage_type' => 'C']))
             ->assertRedirect(route('rentals.create'))->assertSessionHasErrors('garage_type');
     }

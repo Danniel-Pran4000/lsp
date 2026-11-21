@@ -1,38 +1,36 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | Penyewaan Garasi</title>
-    <style>
-        body { font: 1rem/1.5 system-ui, sans-serif; max-width: 72rem; margin: 2rem auto; padding: 0 1rem; }
-        label { display: block; margin: .75rem 0; }
-        input, button { font: inherit; padding: .35rem .55rem; }
-        th, td { padding: .5rem; text-align: left; border-bottom: 1px solid #ccc; }
-        .table { overflow-x: auto; }
-        [role="alert"] { color: #a01824; }
-    </style>
+    <title>@yield('title') | Garage Rental</title>
+    @vite('resources/css/app.css')
 </head>
 <body>
-    <main>
-        <h1>@yield('title')</h1>
-        @if (session('status'))
-            <p role="status">{{ session('status') }}</p>
-        @endif
-        @if ($errors->any())
-            <ul role="alert">
-                @foreach ($errors->all() as $message)
-                    <li>{{ $message }}</li>
-                @endforeach
-            </ul>
-        @endif
-        @yield('content')
-    </main>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="{{ auth()->check() ? (auth()->user()->role === 'admin' ? route('registration.index') : route('rentals.index')) : route('login') }}"><span class="brand-mark">G</span><span>Garage<span class="brand-accent">Rental</span></span></a>
+            @auth
+                <div class="identity"><span class="avatar">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span><span class="identity-text"><strong>{{ auth()->user()->name }}</strong><small>{{ auth()->user()->role === 'admin' ? 'Admin' : 'User' }}</small></span><form action="{{ route('logout') }}" method="post">@csrf <button class="signout" type="submit">Sign out</button></form></div>
+            @endauth
+        </div>
+    </header>
     @auth
-        <form method="post" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit">Keluar</button>
-        </form>
+        <nav class="navigation" aria-label="Main navigation"><div class="nav-inner">
+            @if (auth()->user()->role === 'admin')
+                <a class="{{ request()->routeIs('registration.index') ? 'active' : '' }}" href="{{ route('registration.index') }}">Users</a>
+                <a class="{{ request()->routeIs('admin.rentals', 'garages.*', 'extensions.*') ? 'active' : '' }}" href="{{ route('admin.rentals') }}">Rent</a>
+                <a class="{{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Reports</a>
+            @else
+                <a class="active" href="{{ route('rentals.index') }}">My rentals</a>
+            @endif
+        </div></nav>
     @endauth
+    <main class="page @guest guest-page @endguest">
+        @if (session('status')) <div class="notice" role="status">{{ session('status') }}</div> @endif
+        @if ($errors->any()) <div class="error" role="alert"><strong>Please check the following</strong><ul>@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div> @endif
+        @unless (request()->routeIs('admin.rentals')) <div class="page-heading"><div><h1>@yield('title')</h1></div></div> @endunless
+        <div class="panel">@yield('content')</div>
+    </main>
 </body>
 </html>

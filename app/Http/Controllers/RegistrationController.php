@@ -19,7 +19,7 @@ class RegistrationController extends Controller
     {
         User::create($request->validated());
 
-        return to_route('login')->with('status', 'Pendaftaran berhasil. Akun menunggu verifikasi admin.');
+        return to_route('login')->with('status', 'Registration successful. Your account is awaiting approval.');
     }
 
     public function index(): View
@@ -41,6 +41,6 @@ class RegistrationController extends Controller
             'approval_status' => $decision['decision'],
         ]);
 
-        return to_route('registration.index')->with('status', 'Status penyewa diperbarui.');
+        return to_route('registration.index')->with('status', 'User status updated.');
     }
 }

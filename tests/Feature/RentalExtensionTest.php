@@ -50,7 +50,7 @@ class RentalExtensionTest extends TestCase
 
         $url = route('extensions.preview', ['rental' => $rental, 'ends_on' => '2026-11-28']);
         $quote = $this->actingAs($admin)->get($url)
-            ->assertOk()->assertSee('Bulanan')->assertSee('3 hari')->assertSee('Rp 120.000')
+            ->assertOk()->assertSee('Monthly')->assertSee('3 days')->assertSee('IDR 120.000')
             ->viewData('quoteId');
 
         $this->post(route('extensions.store', $rental), ['quote_id' => $quote])
@@ -106,8 +106,8 @@ class RentalExtensionTest extends TestCase
 
         $this->post(route('extensions.store', $rental), ['quote_id' => $quote, 'proof' => $this->proofImage()])
             ->assertRedirect($url)
-            ->assertSessionHasErrors(['ends_on' => 'Tanggal selesai sudah berubah. Hitung ulang biaya perpanjangan.']);
-        $this->get($url.'?ends_on=2026-11-28')->assertOk()->assertSee('Rp 80.000');
+            ->assertSessionHasErrors(['ends_on' => 'The end date has changed. Recalculate the extension charge.']);
+        $this->get($url.'?ends_on=2026-11-28')->assertOk()->assertSee('IDR 80.000');
         $this->assertDatabaseCount('extensions', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('extension-proofs'));
     }

@@ -4,14 +4,14 @@
 @section('content')
     <p>{{ $user->name }}</p>
     <p>{{ match ($user->approval_status) {
-        'approved' => 'Pendaftaran diterima.',
-        'rejected' => 'Pendaftaran ditolak.',
-        default => 'Pendaftaran menunggu verifikasi admin.',
+        'approved' => 'Registration approved.',
+        'rejected' => 'Registration rejected.',
+        default => 'Registration pending approval.',
     } }}</p>
     @if ($user->canRent())
-        <p><a href="{{ route('rentals.create') }}">Sewa baru</a></p>
+        <p><a href="{{ route('rentals.create') }}">New rental</a></p>
     @endif
     @if ($user->role === 'user')
-        <p><a href="{{ route('rentals.index') }}">Persewaan saya</a></p>
+        <p><a href="{{ route('rentals.index') }}">My rentals</a></p>
     @endif
 @endsection

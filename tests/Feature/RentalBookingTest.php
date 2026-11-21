@@ -31,15 +31,17 @@ class RentalBookingTest extends TestCase
         $this->post(route('rentals.create'), [...$plan, 'remaining_percent' => '101'])
             ->assertSessionHasErrors('remaining_percent');
 
-        $quoteId = $this->requestQuote($garage, $details, 'Rp 309.000');
+        $quoteId = $this->requestQuote($garage, $details, 'IDR 309.000');
         $this->post(route('rentals.store'), ['quote_id' => $quoteId, 'proof' => $this->proofImage()])
-            ->assertRedirect(route('account.show'));
+            ->assertRedirect(route('rentals.index'));
 
         $this->assertDatabaseHas('rentals', [
             'garage_id' => $garage->id, 'starts_on' => '2026-11-28', 'ends_on' => '2026-11-30',
             'remaining_kwh' => null, 'remaining_percent' => 30, 'energy_kwh' => 42, 'initial_total' => 309000,
         ]);
         $this->assertSame('available', $garage->refresh()->status);
+
+        $this->get(route('rentals.index'))->assertOk();
 
         $search = [...$plan, 'garage_type' => 'E'];
         $this->post(route('rentals.available'), $search)->assertOk()->assertDontSee('E001');
@@ -66,13 +68,13 @@ class RentalBookingTest extends TestCase
             'rental_type' => 'monthly',
             'months' => 1,
             'days' => 3,
-        ], 'Rp 1.484.000');
+        ], 'IDR 1.484.000');
 
         $this->post(route('rentals.store'), [
             'quote_id' => $quoteId,
             'proof' => $this->proofImage(),
             'initial_total' => 1,
-        ])->assertRedirect(route('account.show'))->assertSessionHas('status');
+        ])->assertRedirect(route('rentals.index'))->assertSessionHas('status');
 
         $this->assertDatabaseHas('rentals', [
             'user_id' => $user->id,
@@ -95,7 +97,7 @@ class RentalBookingTest extends TestCase
         Storage::fake('local');
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 10000]);
-        $quoteId = $this->actingAs($user)->requestQuote($garage, [], 'Rp 10.000');
+        $quoteId = $this->actingAs($user)->requestQuote($garage, [], 'IDR 10.000');
 
         $this->post(route('rentals.store'), [
             'quote_id' => $quoteId,
@@ -110,14 +112,14 @@ class RentalBookingTest extends TestCase
 
         $this->assertDatabaseCount('rentals', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('rental-proofs'));
-        $preview = $this->get(route('rentals.preview'))->assertOk()->assertSee('Rp 12.000');
+        $preview = $this->get(route('rentals.preview'))->assertOk()->assertSee('IDR 12.000');
         $newQuoteId = $preview->viewData('quoteId');
         $this->assertNotSame($quoteId, $newQuoteId);
 
         $this->post(route('rentals.store'), [
             'quote_id' => $newQuoteId,
             'proof' => $this->proofImage(),
-        ])->assertRedirect(route('account.show'));
+        ])->assertRedirect(route('rentals.index'));
         $this->assertDatabaseHas('rentals', ['initial_total' => 12000]);
     }
 
@@ -127,14 +129,14 @@ class RentalBookingTest extends TestCase
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $otherUser = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 10000]);
-        $quoteId = $this->actingAs($user)->requestQuote($garage, [], 'Rp 10.000');
+        $quoteId = $this->actingAs($user)->requestQuote($garage, [], 'IDR 10.000');
         $firstQuote = session('rental_quote');
 
-        $otherQuoteId = $this->actingAs($otherUser)->requestQuote($garage, [], 'Rp 10.000');
+        $otherQuoteId = $this->actingAs($otherUser)->requestQuote($garage, [], 'IDR 10.000');
         $this->post(route('rentals.store'), [
             'quote_id' => $otherQuoteId,
             'proof' => $this->proofImage(),
-        ])->assertRedirect(route('account.show'));
+        ])->assertRedirect(route('rentals.index'));
 
         $this->actingAs($user)->withSession(['rental_quote' => $firstQuote])
             ->post(route('rentals.store'), ['quote_id' => $quoteId, 'proof' => $this->proofImage()])
@@ -157,8 +159,8 @@ class RentalBookingTest extends TestCase
             'remaining_percent' => '0',
         ];
 
-        $this->actingAs($user)->requestQuote($regular, $electricCar, 'Rp 50');
-        $this->requestQuote($electric, $electricCar, 'Rp 51');
+        $this->actingAs($user)->requestQuote($regular, $electricCar, 'IDR 50');
+        $this->requestQuote($electric, $electricCar, 'IDR 51');
     }
 
     private function requestQuote(Garage $garage, array $details, string $total): string

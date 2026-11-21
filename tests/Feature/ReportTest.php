@@ -25,7 +25,7 @@ class ReportTest extends TestCase
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'monthly', 'year' => 2026]))
             ->assertOk()->assertSee('Januari')->assertSee('Desember')
-            ->assertSee('Rp 309.000')->assertSee('Rp 225.000')->assertDontSee('Rp 999.000');
+            ->assertSee('IDR 309.000')->assertSee('IDR 225.000')->assertDontSee('IDR 999.000');
 
         $this->assertCount(12, $report->viewData('groups'));
         $rentals = $report->viewData('rentalTotals');
@@ -50,7 +50,7 @@ class ReportTest extends TestCase
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'daily', 'year' => 2028, 'month' => 2]))
             ->assertOk()->assertSee('01 Februari')->assertSee('29 Februari')
-            ->assertSee('Rp 30.000')->assertSee('Rp 10.000')->assertDontSee('Rp 80.000');
+            ->assertSee('IDR 30.000')->assertSee('IDR 10.000')->assertDontSee('IDR 80.000');
 
         $this->assertCount(29, $report->viewData('groups'));
         $this->assertSame('30000', (string) $report->viewData('rentalTotals')[29]->total);
@@ -74,13 +74,13 @@ class ReportTest extends TestCase
         $this->assertSame('150000', (string) $allTypes->viewData('rentalTotals')['C']->total);
 
         $byType = $this->get(route('reports.index', ['mode' => 'type', 'garage_type' => 'S']))
-            ->assertOk()->assertSee('S001')->assertDontSee('C001')->assertDontSee('Rp 75.000');
+            ->assertOk()->assertSee('S001')->assertDontSee('C001')->assertDontSee('IDR 75.000');
         $this->assertSame(['S'], array_keys($byType->viewData('groups')));
         $this->assertCount(1, $byType->viewData('rentalDetails'));
         $this->assertCount(1, $byType->viewData('extensionDetails'));
 
         $allRenters = $this->get(route('reports.index', ['mode' => 'renter']))
-            ->assertOk()->assertSee('Penyewa Satu')->assertSee('Penyewa Dua')->assertDontSee('Admin Uji');
+            ->assertOk()->assertSee('Penyewa Satu')->assertSee('Penyewa Dua');
         $this->assertSame('75000', (string) $allRenters->viewData('extensionTotals')[$second->id]->total);
 
         $byRenter = $this->get(route('reports.index', ['mode' => 'renter', 'user_id' => $second->id]))

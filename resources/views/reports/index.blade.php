@@ -1,27 +1,27 @@
 @extends('layouts.account')
-@section('title', 'Laporan persewaan')
+@section('title', 'Reports')
 
 @section('content')
     @php
-        $formatRupiah = static fn ($amount) => 'Rp '.preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', (string) $amount);
+        $formatRupiah = static fn ($amount) => 'IDR '.preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', (string) $amount);
     @endphp
 
     <form action="{{ route('reports.index') }}" method="get">
-        <label>Mode laporan
+        <label>Report mode
             <select id="report-mode" name="mode">
-                <option value="monthly" @selected($mode === 'monthly')>Per bulan</option>
-                <option value="daily" @selected($mode === 'daily')>Per hari</option>
-                <option value="type" @selected($mode === 'type')>Per tipe garasi</option>
-                <option value="renter" @selected($mode === 'renter')>Per penyewa</option>
+                <option value="monthly" @selected($mode === 'monthly')>Monthly</option>
+                <option value="daily" @selected($mode === 'daily')>Daily</option>
+                <option value="type" @selected($mode === 'type')>By garage type</option>
+                <option value="renter" @selected($mode === 'renter')>By renter</option>
             </select>
         </label>
         <fieldset data-modes="monthly daily">
-            <legend>Periode laporan</legend>
-            <label>Tahun <input type="number" name="year" min="1000" max="9999" value="{{ $year }}" required></label>
+            <legend>Report period</legend>
+            <label>Year <input type="number" name="year" min="1000" max="9999" value="{{ $year }}" required></label>
         </fieldset>
         <fieldset data-modes="daily">
-            <legend>Pilih bulan</legend>
-            <label>Bulan
+            <legend>Select month</legend>
+            <label>Month
                 <select name="month">
                     @foreach ($monthNames as $number => $name)
                         <option value="{{ $number }}" @selected($month === $number)>{{ $name }}</option>
@@ -30,10 +30,10 @@
             </label>
         </fieldset>
         <fieldset data-modes="type">
-            <legend>Filter garasi</legend>
-            <label>Tipe garasi
+            <legend>Garage filter</legend>
+            <label>Garage type
                 <select name="garage_type">
-                    <option value="">Semua tipe</option>
+                    <option value="">All types</option>
                     @foreach ($garageTypes as $type => $label)
                         <option value="{{ $type }}" @selected($garageType === $type)>{{ $label }}</option>
                     @endforeach
@@ -42,33 +42,33 @@
         </fieldset>
         <fieldset data-modes="renter">
             <legend>Filter penyewa</legend>
-            <label>Penyewa
+            <label>Renter
                 <select name="user_id">
-                    <option value="">Semua penyewa</option>
+                    <option value="">All renters</option>
                     @foreach ($renters as $renter)
                         <option value="{{ $renter->id }}" @selected($userId === $renter->id)>{{ $renter->name }} (#{{ $renter->id }})</option>
                     @endforeach
                 </select>
             </label>
         </fieldset>
-        <button type="submit">Tampilkan</button>
+        <button type="submit">Show report</button>
     </form>
 
-    <h2>Ringkasan</h2>
+    <h2>Summary</h2>
     <div class="table">
         <table>
             <thead>
                 <tr>
                     <th>{{ match ($mode) {
-                        'monthly' => 'Bulan',
-                        'daily' => 'Tanggal',
-                        'type' => 'Tipe garasi',
-                        'renter' => 'Penyewa',
+                        'monthly' => 'Month',
+                        'daily' => 'Date',
+                        'type' => 'Garage type',
+                        'renter' => 'Renter',
                     } }}</th>
-                    <th>Jumlah sewa baru</th>
-                    <th>Total biaya awal</th>
-                    <th>Jumlah perpanjangan</th>
-                    <th>Total pembayaran perpanjangan</th>
+                    <th>New rentals</th>
+                    <th>Initial payments</th>
+                    <th>Extensions</th>
+                    <th>Extension payments</th>
                 </tr>
             </thead>
             <tbody>
@@ -81,16 +81,16 @@
                         <td>{{ $formatRupiah($extensionTotals[$key]->total ?? 0) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Belum ada penyewa.</td></tr>
+                    <tr><td colspan="5">No renters found.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <h2>Detail sewa baru</h2>
+    <h2>Rental details</h2>
     <div class="table">
         <table>
-            <thead><tr><th>No. sewa</th><th>Tanggal mulai</th><th>Tanggal selesai</th><th>Unit</th><th>Penyewa</th><th>Total awal</th></tr></thead>
+            <thead><tr><th>Rental ID</th><th>Start date</th><th>End date</th><th>Unit</th><th>Renter</th><th>Initial payment</th></tr></thead>
             <tbody>
                 @forelse ($rentalDetails as $rental)
                     <tr>
@@ -99,18 +99,18 @@
                         <td>{{ $formatRupiah($rental->initial_total) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">Tidak ada sewa baru untuk filter ini.</td></tr>
+                    <tr><td colspan="6">No rentals found for this filter.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
     {{ $rentalDetails->links() }}
 
-    <h2>Detail pembayaran perpanjangan</h2>
+    <h2>Extension payment details</h2>
     <div class="table">
         <table>
             <thead>
-                <tr><th>No. sewa</th><th>Tanggal perpanjangan</th><th>Unit</th><th>Penyewa</th><th>Akhir lama</th><th>Akhir baru</th><th>Tambahan bayar</th></tr>
+                <tr><th>Rental ID</th><th>Extension date</th><th>Unit</th><th>Renter</th><th>Previous end</th><th>New end</th><th>Additional payment</th></tr>
             </thead>
             <tbody>
                 @forelse ($extensionDetails as $extension)
@@ -121,28 +121,14 @@
                         <td>{{ $formatRupiah($extension->amount) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7">Tidak ada pembayaran perpanjangan untuk filter ini.</td></tr>
+                    <tr><td colspan="7">No extension payments found for this filter.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
     {{ $extensionDetails->links() }}
 
-    <p><a href="{{ route('registration.index') }}">Kembali ke daftar penyewa</a></p>
+    <p><a href="{{ route('registration.index') }}">Back to rentals</a></p>
 
-    <script>
-        const reportMode = document.querySelector('#report-mode');
-        const reportFields = document.querySelectorAll('[data-modes]');
-
-        function updateReportFilters() {
-            reportFields.forEach((field) => {
-                const applies = field.dataset.modes.split(' ').includes(reportMode.value);
-                field.hidden = !applies;
-                field.disabled = !applies;
-            });
-        }
-
-        reportMode.addEventListener('change', updateReportFilters);
-        updateReportFilters();
-    </script>
+    
 @endsection

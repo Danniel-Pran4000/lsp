@@ -21,10 +21,10 @@ class StoreGarageBatchRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'type' => 'tipe garasi',
-            'quantity' => 'jumlah unit',
-            'daily_rate' => 'tarif harian',
-            'kwh_rate' => 'tarif per kWh',
+            'type' => 'garage type',
+            'quantity' => 'number of units',
+            'daily_rate' => 'daily rate',
+            'kwh_rate' => 'rate per kWh',
         ];
     }
 }

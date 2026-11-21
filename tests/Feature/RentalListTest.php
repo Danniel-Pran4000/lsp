@@ -32,10 +32,10 @@ class RentalListTest extends TestCase
 
         $this->actingAs($renter)->get(route('account.show'))->assertSee(route('rentals.index'));
         $this->get(route('rentals.index', ['user_id' => $otherRenter->id]))
-            ->assertOk()->assertSee('21 persewaan')->assertSee('2 unit garasi berbeda')
+            ->assertOk()->assertSee('21 rentals')->assertSee('2 distinct garage units')
             ->assertSee('S001')->assertDontSee('S002')->assertDontSee('S003');
         $this->get(route('rentals.index', ['page' => 2]))
-            ->assertOk()->assertSee('21 persewaan')->assertSee('2 unit garasi berbeda')
+            ->assertOk()->assertSee('21 rentals')->assertSee('2 distinct garage units')
             ->assertSee('S002')->assertDontSee('S003')->assertSee(today()->subDay()->format('d/m/Y'));
     }
 
@@ -47,7 +47,7 @@ class RentalListTest extends TestCase
 
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'pending']);
         $this->actingAs($renter)->get(route('rentals.index'))
-            ->assertOk()->assertSee('0 persewaan')->assertSee('Belum ada persewaan');
+            ->assertOk()->assertSee('0 rentals')->assertSee('No rentals found');
 
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 50000]);
         $this->rental($renter, $garage, '2026-11-21', '2026-11-24');

@@ -41,7 +41,7 @@ class RentalController extends Controller
         $selectedGarageType = $request->validated('garage_type');
 
         if (! in_array($selectedGarageType, $plan['garageTypes'], true)) {
-            throw ValidationException::withMessages(['garage_type' => 'Tipe garasi tidak cocok dengan kendaraan.'])
+            throw ValidationException::withMessages(['garage_type' => 'The garage type is not compatible with the vehicle.'])
                 ->redirectTo(route('rentals.create'));
         }
 
@@ -58,7 +58,7 @@ class RentalController extends Controller
             $plan = $this->plan($request, $calculator);
             if (! in_array($plan['details']['garage_type'], $plan['garageTypes'], true)) {
                 return to_route('rentals.create')
-                    ->withErrors(['garage_type' => 'Tipe garasi tidak cocok dengan kendaraan.'])
+                    ->withErrors(['garage_type' => 'The garage type is not compatible with the vehicle.'])
                     ->withInput($plan['details']);
             }
 
@@ -83,14 +83,14 @@ class RentalController extends Controller
 
         if ($start->lessThan(CarbonImmutable::today())) {
             return to_route('rentals.create')
-                ->withErrors(['quote' => 'Tanggal mulai sudah lewat. Pilih tanggal mulai baru.'])
+                ->withErrors(['quote' => 'The start date has passed. Choose a new start date.'])
                 ->withInput($details);
         }
 
         $garage = $rentals->availableUnits($details['garage_type'], $start, $end)->find($details['garage_id']);
         if (! $garage) {
             return to_route('rentals.create')
-                ->withErrors(['garage_id' => 'Unit tidak lagi tersedia. Pilih unit lain.'])
+                ->withErrors(['garage_id' => 'This unit is no longer available. Choose another unit.'])
                 ->withInput($details);
         }
 
@@ -115,7 +115,7 @@ class RentalController extends Controller
         $quote = $request->session()->get('rental_quote');
         if (($quote['user_id'] ?? null) !== $request->user()->id || ($quote['id'] ?? null) !== $request->validated('quote_id')) {
             return to_route('rentals.preview')->withErrors([
-                'quote' => 'Rincian biaya perlu ditampilkan ulang. Periksa total dan unggah kembali bukti bayar.',
+                'quote' => 'Review the payment details and upload payment proof again.',
             ]);
         }
 
@@ -127,7 +127,7 @@ class RentalController extends Controller
 
         $request->session()->forget('rental_quote');
 
-        return to_route('account.show')->with('status', "Penyewaan #{$rental->id} berhasil disimpan.");
+        return to_route('rentals.index')->with('status', "Rental #{$rental->id} saved. Unit {$rental->garage->code}, {$rental->starts_on} to {$rental->ends_on}.");
     }
 
     private function plan(PlanRentalRequest $request, RentalCalculator $calculator): array
@@ -141,7 +141,7 @@ class RentalController extends Controller
             $details['starts_on'] = $start->toDateString();
             $end = $calculator->endDate($start, (int) ($details['months'] ?? 0), (int) $details['days']);
             if ($end->year > 9999) {
-                throw ValidationException::withMessages(['days' => 'Tanggal selesai melampaui rentang tanggal yang didukung.'])
+                throw ValidationException::withMessages(['days' => 'The end date exceeds the supported date range.'])
                     ->redirectTo(route('rentals.create'));
             }
 

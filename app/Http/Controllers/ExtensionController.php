@@ -30,7 +30,7 @@ class ExtensionController extends Controller
     {
         $today = CarbonImmutable::today();
         if (! $rental->isActiveOn($today)) {
-            return to_route('extensions.create')->withErrors(['rental' => 'Sewa ini tidak aktif hari ini.']);
+            return to_route('extensions.create')->withErrors(['rental' => 'This rental is not active today.']);
         }
 
         $rental->load(['garage', 'user']);
@@ -68,7 +68,7 @@ class ExtensionController extends Controller
             || ($quote['rental_id'] ?? null) !== $rental->id
             || ($quote['id'] ?? null) !== $request->validated('quote_id')) {
             return to_route('extensions.preview', $rental)
-                ->withErrors(['quote' => 'Hitung ulang biaya perpanjangan sebelum menyimpan.']);
+                ->withErrors(['quote' => 'Recalculate the extension charge before saving.']);
         }
 
         try {

@@ -61,7 +61,7 @@ class RegistrationTest extends TestCase
         $this->assertFalse($second->refresh()->canRent());
         $this->get(route('registration.index'))->assertOk()
             ->assertSee($first->email)->assertSee($second->email)->assertSee($third->email)
-            ->assertSee('Diterima')->assertSee('Ditolak')->assertSee('Menunggu verifikasi')
+            ->assertSee('Approved')->assertSee('Rejected')->assertSee('Pending')
             ->assertDontSee($admin->email);
 
         $this->patch(route('registration.verify', $first), ['decision' => 'rejected'])->assertRedirect();

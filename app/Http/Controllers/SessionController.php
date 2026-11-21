@@ -22,14 +22,14 @@ class SessionController extends Controller
         ]);
 
         if (! Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'Email atau password salah.'])->onlyInput('email');
+            return back()->withErrors(['email' => 'Invalid email or password.'])->onlyInput('email');
         }
 
         $request->session()->regenerate();
 
         return $request->user()->role === 'admin'
             ? to_route('registration.index')
-            : to_route('account.show');
+            : to_route('rentals.index');
     }
 
     public function show(Request $request): View
