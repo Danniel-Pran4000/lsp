@@ -25,5 +25,5 @@
     </div>
     {{ $rentals->links() }}
 
-    <p><a href="{{ route('registration.pending') }}">Kembali ke verifikasi pendaftar</a></p>
+    <p><a href="{{ route('registration.index') }}">Kembali ke daftar penyewa</a></p>
 @endsection

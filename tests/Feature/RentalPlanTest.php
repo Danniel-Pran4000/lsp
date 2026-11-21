@@ -10,6 +10,23 @@ class RentalPlanTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_future_start_uses_its_own_month_for_the_daily_limit(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
+        $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
+        $payload = [
+            'vehicle_category' => 'bicycle', 'brand' => 'Merek uji', 'vehicle_model' => 'Model uji',
+            'rental_type' => 'daily', 'starts_on' => '2026-12-01', 'days' => 30,
+        ];
+
+        $this->actingAs($user)->post(route('rentals.create'), $payload)
+            ->assertOk()->assertSee('30/12/2026');
+        $this->post(route('rentals.create'), array_replace($payload, ['starts_on' => '2026-11-28']))
+            ->assertSessionHasErrors('days');
+        $this->post(route('rentals.create'), array_replace($payload, ['starts_on' => '2026-11-20', 'days' => 1]))
+            ->assertSessionHasErrors('starts_on');
+    }
+
     public function test_daily_limit_uses_the_start_month_and_end_date_is_inclusive(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());

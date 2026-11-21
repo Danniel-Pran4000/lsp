@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class PlanRentalRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class PlanRentalRequest extends FormRequest
         // Batasi input bulanan ke ukuran yang dapat diproses dalam rentang kolom DATE.
         $days = $this->input('rental_type') === 'monthly'
             ? 'between:0,3652058'
-            : 'between:1,'.(today()->daysInMonth - 1);
+            : 'between:1,30';
 
         $rules = [
             'vehicle_category' => ['required', 'in:bicycle,motorcycle,gas_car,electric_car'],
@@ -26,6 +28,7 @@ class PlanRentalRequest extends FormRequest
             'plate' => ['exclude_if:vehicle_category,bicycle', 'required', 'string', 'max:255'],
             'battery_kwh' => ['exclude_unless:vehicle_category,electric_car', 'required', 'numeric', 'decimal:0,3', 'gt:0', 'max:9999999.999'],
             'remaining_percent' => ['exclude_unless:vehicle_category,electric_car', 'required', 'numeric', 'decimal:0,2', 'between:0,100'],
+            'starts_on' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->toDateString()],
             'rental_type' => ['required', 'in:daily,monthly'],
             'months' => ['exclude_unless:rental_type,monthly', 'required', 'integer', 'between:1,119987'],
             'days' => ['required', 'integer', $days],
@@ -40,5 +43,21 @@ class PlanRentalRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if (! $this->isMethod('post') || $this->input('rental_type') !== 'daily'
+                || $validator->errors()->has('starts_on') || $validator->errors()->has('days')) {
+                return;
+            }
+
+            $start = CarbonImmutable::parse($this->input('starts_on') ?? 'today');
+            $maximum = $start->daysInMonth - 1;
+            if ((int) $this->input('days') > $maximum) {
+                $validator->errors()->add('days', "Maksimal sewa harian adalah {$maximum} hari pada bulan tanggal mulai.");
+            }
+        }];
     }
 }

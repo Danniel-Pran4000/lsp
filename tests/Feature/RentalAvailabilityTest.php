@@ -41,6 +41,10 @@ class RentalAvailabilityTest extends TestCase
         $this->assertSame('used', $endsToday->refresh()->status);
         $this->assertSame('available', $overlapsEnd->refresh()->status);
         $this->assertDatabaseCount('rentals', 4);
+
+        $this->post(route('rentals.available'), array_replace($this->searchInput(), ['starts_on' => '2026-11-24']))
+            ->assertOk()->assertSee('S001')->assertDontSee('S002')
+            ->assertDontSee('S003')->assertDontSee('S004');
     }
 
     public function test_search_offers_a_compatible_type_and_explains_empty_results(): void

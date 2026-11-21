@@ -26,7 +26,7 @@
         </label>
         <button type="submit">Buat unit</button>
     </form>
-    <p><a href="{{ route('registration.pending') }}">Verifikasi pendaftar</a></p>
+    <p><a href="{{ route('registration.index') }}">Daftar penyewa</a></p>
 
     <script>
         const garageType = document.querySelector('#type');

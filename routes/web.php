@@ -4,6 +4,7 @@ use App\Http\Controllers\ExtensionController;
 use App\Http\Controllers\GarageController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RentalController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureApprovedRenter;
@@ -33,11 +34,12 @@ Route::middleware(['auth', EnsureApprovedRenter::class])->group(function () {
 });
 
 Route::middleware(['auth', EnsureAdmin::class])->group(function () {
-    Route::get('/admin/registrations', [RegistrationController::class, 'pending'])->name('registration.pending');
+    Route::get('/admin/registrations', [RegistrationController::class, 'index'])->name('registration.index');
     Route::patch('/admin/registrations/{user}', [RegistrationController::class, 'verify'])->name('registration.verify');
     Route::get('/admin/garages/create', [GarageController::class, 'create'])->name('garages.create');
     Route::post('/admin/garages', [GarageController::class, 'storeBatch'])->name('garages.store-batch');
     Route::get('/admin/extensions', [ExtensionController::class, 'activeRentals'])->name('extensions.create');
     Route::get('/admin/extensions/{rental}', [ExtensionController::class, 'preview'])->name('extensions.preview');
     Route::post('/admin/extensions/{rental}', [ExtensionController::class, 'store'])->name('extensions.store');
+    Route::get('/admin/reports', [ReportController::class, 'index'])->name('reports.index');
 });

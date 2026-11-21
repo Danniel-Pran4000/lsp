@@ -12,9 +12,13 @@
         $garageLabels = ['S' => 'Sepeda (S)', 'C' => 'Mobil bensin (C)', 'E' => 'Mobil listrik (E)'];
     @endphp
 
-    <p>Tanggal mulai <strong>{{ $start->format('d/m/Y') }}</strong></p>
+    <p>Rencana tanggal mulai <strong>{{ $start->format('d/m/Y') }}</strong></p>
     <form method="post" action="{{ route('rentals.create') }}">
         @csrf
+        <label>Tanggal mulai
+            <input id="starts-on" type="date" name="starts_on" min="{{ today()->toDateString() }}" max="9999-12-31"
+                value="{{ is_string(old('starts_on')) ? old('starts_on') : $start->toDateString() }}" required>
+        </label>
         <label for="vehicle-category">Kategori kendaraan</label>
         <select id="vehicle-category" name="vehicle_category" required>
             @foreach ($vehicles as $category => $label)
@@ -55,7 +59,7 @@
         </fieldset>
         <label for="days" id="days-label">Jumlah hari (tambahan hari untuk bulanan)</label>
         <input id="days" type="number" name="days" min="0" step="1" value="{{ old('days', $details['days'] ?? '') }}" required>
-        <p id="daily-limit" data-max="{{ $start->daysInMonth - 1 }}">Batas sewa harian bulan ini {{ $start->daysInMonth - 1 }} hari.</p>
+        <p id="daily-limit">Batas sewa harian mengikuti bulan tanggal mulai.</p>
         <button type="submit">Hitung tanggal selesai</button>
     </form>
 
@@ -104,6 +108,7 @@
 
     <script>
         const category = document.querySelector('#vehicle-category');
+        const startsOn = document.querySelector('#starts-on');
         const rentalType = document.querySelector('#rental-type');
         const plateFields = document.querySelector('#plate-fields');
         const batteryFields = document.querySelector('#battery-fields');
@@ -118,11 +123,19 @@
             monthlyFields.hidden = monthlyFields.disabled = !isMonthly;
             dailyLimit.hidden = isMonthly;
             days.min = isMonthly ? '0' : '1';
-            days.max = isMonthly ? '' : dailyLimit.dataset.max;
+            const startDate = startsOn.valueAsDate;
+            if (!isMonthly && startDate) {
+                startDate.setUTCMonth(startDate.getUTCMonth() + 1, 0);
+                days.max = String(startDate.getUTCDate() - 1);
+                dailyLimit.textContent = 'Batas sewa harian pada bulan tanggal mulai ' + days.max + ' hari.';
+            } else {
+                days.removeAttribute('max');
+            }
             document.querySelector('#days-label').textContent = isMonthly ? 'Tambahan hari' : 'Jumlah hari';
         }
 
         category.addEventListener('change', updateFields);
+        startsOn.addEventListener('change', updateFields);
         rentalType.addEventListener('change', updateFields);
         updateFields();
     </script>

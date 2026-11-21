@@ -46,32 +46,40 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_admin_can_approve_and_reject_pending_users_once(): void
+    public function test_admin_can_list_all_renters_and_change_their_status_in_either_direction(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'approval_status' => null]);
-        [$first, $second] = User::factory()->count(2)->create()->all();
+        [$first, $second, $third] = User::factory()->count(3)->create()->all();
 
         $this->post(route('login.store'), [
             'email' => $admin->email,
             'password' => 'password',
-        ])->assertRedirect(route('registration.pending'));
-        $this->get(route('registration.pending'))->assertOk()->assertSee($first->email);
+        ])->assertRedirect(route('registration.index'));
         $this->patch(route('registration.verify', $first), ['decision' => 'approved'])->assertRedirect();
         $this->patch(route('registration.verify', $second), ['decision' => 'rejected'])->assertRedirect();
-        $this->patch(route('registration.verify', $first), ['decision' => 'rejected'])->assertConflict();
-
         $this->assertTrue($first->refresh()->canRent());
-        $this->assertSame('rejected', $second->refresh()->approval_status);
-        $this->assertFalse($second->canRent());
+        $this->assertFalse($second->refresh()->canRent());
+        $this->get(route('registration.index'))->assertOk()
+            ->assertSee($first->email)->assertSee($second->email)->assertSee($third->email)
+            ->assertSee('Diterima')->assertSee('Ditolak')->assertSee('Menunggu verifikasi')
+            ->assertDontSee($admin->email);
+
+        $this->patch(route('registration.verify', $first), ['decision' => 'rejected'])->assertRedirect();
+        $this->patch(route('registration.verify', $second), ['decision' => 'approved'])->assertRedirect();
+        $this->patch(route('registration.verify', $admin), ['decision' => 'rejected'])->assertNotFound();
+        $this->assertDatabaseCount('users', 4);
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->assertGuest();
+
+        $this->actingAs($first->refresh())->get(route('rentals.create'))->assertForbidden();
+        $this->actingAs($second->refresh())->get(route('rentals.create'))->assertOk();
     }
 
     public function test_admin_routes_require_an_admin_account(): void
     {
         $user = User::factory()->create();
-        $this->get(route('registration.pending'))->assertRedirect(route('login'));
-        $this->actingAs($user)->get(route('registration.pending'))->assertForbidden();
+        $this->get(route('registration.index'))->assertRedirect(route('login'));
+        $this->actingAs($user)->get(route('registration.index'))->assertForbidden();
         $this->patch(route('registration.verify', $user), ['decision' => 'approved'])->assertForbidden();
         $this->assertSame('pending', $user->refresh()->approval_status);
     }

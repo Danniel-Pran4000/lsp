@@ -28,7 +28,7 @@ class SessionController extends Controller
         $request->session()->regenerate();
 
         return $request->user()->role === 'admin'
-            ? to_route('registration.pending')
+            ? to_route('registration.index')
             : to_route('account.show');
     }
 

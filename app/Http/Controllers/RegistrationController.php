@@ -22,28 +22,25 @@ class RegistrationController extends Controller
         return to_route('login')->with('status', 'Pendaftaran berhasil. Akun menunggu verifikasi admin.');
     }
 
-    public function pending(): View
+    public function index(): View
     {
         $users = User::where('role', 'user')
-            ->where('approval_status', 'pending')
             ->orderBy('id')
             ->simplePaginate(20);
 
-        return view('registration.pending', compact('users'));
+        return view('registration.index', compact('users'));
     }
 
     public function verify(Request $request, User $user): RedirectResponse
     {
+        abort_unless($user->role === 'user', 404);
+
         $decision = $request->validate(['decision' => ['required', 'in:approved,rejected']]);
 
-        // Batasi perubahan ke akun yang masih pending, termasuk saat admin bertindak bersamaan.
-        $updated = User::whereKey($user->id)
-            ->where('role', 'user')
-            ->where('approval_status', 'pending')
-            ->update(['approval_status' => $decision['decision']]);
+        User::whereKey($user->id)->where('role', 'user')->update([
+            'approval_status' => $decision['decision'],
+        ]);
 
-        abort_if($updated === 0, 409, 'Pendaftar sudah diproses atau tidak dapat diverifikasi.');
-
-        return to_route('registration.pending')->with('status', 'Keputusan verifikasi disimpan.');
+        return to_route('registration.index')->with('status', 'Status penyewa diperbarui.');
     }
 }

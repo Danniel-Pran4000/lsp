@@ -14,6 +14,43 @@ class RentalBookingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_future_booking_stores_remaining_percent_and_only_occupies_the_unit_on_its_start_date(): void
+    {
+        Storage::fake('local');
+        $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
+        $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
+        $garage = Garage::create(['code' => 'E001', 'type' => 'E', 'daily_rate' => 75000, 'kwh_rate' => 2000]);
+        $details = [
+            'vehicle_category' => 'electric_car', 'plate' => 'B 1234 ABC', 'battery_kwh' => '60',
+            'remaining_percent' => '30', 'starts_on' => '2026-11-28', 'days' => 3,
+        ];
+
+        $plan = [...$details, 'brand' => 'Merek uji', 'vehicle_model' => 'Model uji', 'rental_type' => 'daily'];
+        $this->actingAs($user)->post(route('rentals.create'), [...$plan, 'remaining_percent' => null, 'remaining_kwh' => '18'])
+            ->assertSessionHasErrors('remaining_percent');
+        $this->post(route('rentals.create'), [...$plan, 'remaining_percent' => '101'])
+            ->assertSessionHasErrors('remaining_percent');
+
+        $quoteId = $this->requestQuote($garage, $details, 'Rp 309.000');
+        $this->post(route('rentals.store'), ['quote_id' => $quoteId, 'proof' => $this->proofImage()])
+            ->assertRedirect(route('account.show'));
+
+        $this->assertDatabaseHas('rentals', [
+            'garage_id' => $garage->id, 'starts_on' => '2026-11-28', 'ends_on' => '2026-11-30',
+            'remaining_kwh' => null, 'remaining_percent' => 30, 'energy_kwh' => 42, 'initial_total' => 309000,
+        ]);
+        $this->assertSame('available', $garage->refresh()->status);
+
+        $search = [...$plan, 'garage_type' => 'E'];
+        $this->post(route('rentals.available'), $search)->assertOk()->assertDontSee('E001');
+        $this->post(route('rentals.available'), [...$search, 'starts_on' => '2026-11-22'])
+            ->assertOk()->assertSee('E001');
+
+        $this->travelTo(now()->setDate(2026, 11, 28)->startOfDay());
+        $this->post(route('rentals.available'), $search)->assertOk()->assertDontSee('E001');
+        $this->assertSame('used', $garage->refresh()->status);
+    }
+
     public function test_renter_can_book_an_electric_garage_with_payment_proof(): void
     {
         Storage::fake('local');

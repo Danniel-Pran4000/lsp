@@ -35,7 +35,9 @@ class RentalService
 
         $occupied = $this->overlappingRentals($start, $end)->select('garage_id');
 
-        return $garages->whereNotIn('id', $occupied)->orderBy('code')->get();
+        return $garages->whereNotIn('id', $activeToday)
+            ->whereNotIn('id', $occupied)
+            ->orderBy('code')->get();
     }
 
     public function book(User $user, array $quote, UploadedFile $proof, RentalCalculator $calculator): Rental
@@ -45,15 +47,17 @@ class RentalService
             $garage = Garage::query()->lockForUpdate()->find($details['garage_id']);
             $start = CarbonImmutable::parse($quote['starts_on']);
             $end = CarbonImmutable::parse($quote['ends_on']);
+            $today = CarbonImmutable::today();
 
-            abort_unless(User::find($user->id)?->canRent(), 403);
+            abort_unless(User::query()->lockForUpdate()->find($user->id)?->canRent(), 403);
 
-            if (! $start->isSameDay(CarbonImmutable::today())) {
-                throw ValidationException::withMessages(['quote' => 'Tanggal mulai berubah. Hitung kembali periode sewa.']);
+            if ($start->lessThan($today)) {
+                throw ValidationException::withMessages(['quote' => 'Tanggal mulai sudah lewat. Pilih tanggal mulai baru.']);
             }
 
             if (! $garage || $garage->type !== $details['garage_type']
-                || $this->overlappingRentals($start, $end)->where('garage_id', $garage->id)->exists()) {
+                || $this->overlappingRentals($start, $end)->where('garage_id', $garage->id)->exists()
+                || (! $start->isSameDay($today) && $this->overlappingRentals($today, $today)->where('garage_id', $garage->id)->exists())) {
                 throw ValidationException::withMessages(['garage_id' => 'Unit tidak lagi tersedia. Pilih unit lain.']);
             }
 
@@ -81,7 +85,7 @@ class RentalService
                 ...$charge,
             ])->save();
 
-            $garage->status = 'used';
+            $garage->status = $start->isSameDay($today) ? 'used' : 'available';
             $garage->save();
 
             return $rental;

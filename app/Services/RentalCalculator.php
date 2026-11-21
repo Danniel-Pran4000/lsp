@@ -28,6 +28,10 @@ class RentalCalculator
 
     public function initialCharge(Garage $garage, array $details): array
     {
+        if ($details['vehicle_category'] === 'electric_car' && ! isset($details['remaining_percent'])) {
+            throw ValidationException::withMessages(['remaining_percent' => 'Masukkan sisa baterai dalam persen.']);
+        }
+
         $dailyRate = BigDecimal::of((string) $garage->daily_rate)->toScale(2);
         $billableDays = (int) ($details['months'] ?? 0) * 25 + (int) $details['days'];
         $rentalAmount = $dailyRate->multipliedBy($billableDays);

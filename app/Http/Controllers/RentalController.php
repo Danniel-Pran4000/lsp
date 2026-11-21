@@ -65,9 +65,9 @@ class RentalController extends Controller
         $end = CarbonImmutable::parse($quote['ends_on']);
         $details = $quote['details'];
 
-        if (! $start->isSameDay(CarbonImmutable::today())) {
+        if ($start->lessThan(CarbonImmutable::today())) {
             return to_route('rentals.create')
-                ->withErrors(['quote' => 'Tanggal mulai berubah. Hitung kembali periode sewa.'])
+                ->withErrors(['quote' => 'Tanggal mulai sudah lewat. Pilih tanggal mulai baru.'])
                 ->withInput($details);
         }
 
@@ -116,12 +116,13 @@ class RentalController extends Controller
 
     private function plan(PlanRentalRequest $request, RentalCalculator $calculator): array
     {
-        $start = CarbonImmutable::today();
         $details = $request->validated();
+        $start = CarbonImmutable::parse($details['starts_on'] ?? 'today');
         $end = null;
         $garageTypes = [];
 
         if ($details !== []) {
+            $details['starts_on'] = $start->toDateString();
             $end = $calculator->endDate($start, (int) ($details['months'] ?? 0), (int) $details['days']);
             if ($end->year > 9999) {
                 throw ValidationException::withMessages(['days' => 'Tanggal selesai melampaui rentang tanggal yang didukung.'])
