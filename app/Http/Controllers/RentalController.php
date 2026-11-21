@@ -34,6 +34,7 @@ class RentalController extends Controller
             ->where('ends_on', '>=', $today)
             ->count();
         $canCreateRental = $user->canRent();
+        $approvalStatus = $user->approval_status;
         $rentals = $ownRentals->with('garage')
             ->withSum('extensions', 'amount')
             ->orderByDesc('starts_on')->orderByDesc('id')
@@ -51,12 +52,12 @@ class RentalController extends Controller
                 ];
             });
 
-        return view('user.rentals', compact('rentals', 'activeCount', 'canCreateRental'));
+        return view('user.rentals', compact('rentals', 'activeCount', 'canCreateRental', 'approvalStatus'));
     }
 
     public function show(Request $request, Rental $rental): View
     {
-        $this->ensureOwner($request, $rental);
+        $this->ensureCanView($request, $rental);
         $rental->load(['garage', 'user'])->loadSum('extensions', 'amount');
         $extensions = $rental->extensions()->orderBy('id')->paginate(15);
         $originalEnd = $rental->extensions()->orderBy('id')->value('old_end') ?? $rental->ends_on;
@@ -67,12 +68,13 @@ class RentalController extends Controller
             'vehicle' => Rental::VEHICLE_LABELS[$rental->vehicle_category] ?? $rental->vehicle_category,
             'duration' => Rental::DURATION_LABELS[$rental->rental_type] ?? $rental->rental_type,
             'garageType' => Garage::TYPE_LABELS[$rental->garage->type],
+            'backRoute' => $request->user()->role === 'admin' ? 'admin.rentals' : 'rentals.index',
         ]);
     }
 
     public function proof(Request $request, Rental $rental, ?int $extension = null): StreamedResponse
     {
-        $this->ensureOwner($request, $rental);
+        $this->ensureCanView($request, $rental);
         $path = $extension === null
             ? $rental->proof_path
             : $rental->extensions()->findOrFail($extension)->proof_path;
@@ -201,10 +203,11 @@ class RentalController extends Controller
         return to_route('rentals.index')->with('status', "Sewa {$rental->brand} {$rental->vehicle_model} berhasil disimpan. Unit {$rental->garage->code}.");
     }
 
-    private function ensureOwner(Request $request, Rental $rental): void
+    private function ensureCanView(Request $request, Rental $rental): void
     {
         $user = $request->user();
-        abort_unless($user->role === 'user' && (string) $rental->user_id === (string) $user->id, 404);
+        $ownsRental = $user->role === 'user' && (string) $rental->user_id === (string) $user->id;
+        abort_unless($user->role === 'admin' || $ownsRental, 404);
     }
 
     private function previewError(PlanRentalRequest $request, array $errors, array $details): RedirectResponse

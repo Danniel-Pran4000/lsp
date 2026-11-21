@@ -2,6 +2,16 @@
 @section('title', 'Sewa saya')
 
 @section('content')
+    @if ($approvalStatus === 'pending')
+        <p class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+            Akun Anda berstatus <strong>Pending</strong> dan masih menunggu persetujuan admin.
+        </p>
+    @elseif ($approvalStatus === 'rejected')
+        <p class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="status">
+            Akun Anda berstatus <strong>Rejected</strong>.
+        </p>
+    @endif
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
         <p class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-sm font-medium text-red-800">
             <span aria-hidden="true" class="size-2 rounded-full bg-red-700"></span>

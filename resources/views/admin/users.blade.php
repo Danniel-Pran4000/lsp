@@ -29,9 +29,9 @@
                                 'bg-red-50 text-red-800' => $user->approval_status === 'rejected',
                                 'bg-amber-50 text-amber-900' => ! in_array($user->approval_status, ['approved', 'rejected'], true),
                             ])>{{ match ($user->approval_status) {
-                                'approved' => 'Disetujui',
-                                'rejected' => 'Ditolak',
-                                default => 'Menunggu persetujuan',
+                                'approved' => 'Approved',
+                                'rejected' => 'Rejected',
+                                default => 'Pending',
                             } }}</span>
                         </td>
                         <td class="px-4 py-4 text-right">

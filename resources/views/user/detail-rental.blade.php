@@ -98,5 +98,5 @@
         </table>
     </div>
     {{ $extensions->links() }}
-    <a class="mt-6 inline-block text-sm font-medium text-red-700 hover:underline" href="{{ route('rentals.index') }}">Kembali ke sewa saya</a>
+    <a class="mt-6 inline-block text-sm font-medium text-red-700 hover:underline" href="{{ route($backRoute) }}">Kembali ke daftar sewa</a>
 @endsection

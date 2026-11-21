@@ -2,3 +2,9 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../resources/views/**/*.blade.php';
 @font-face { font-family: Poppins; src: url('./Poppins-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+
+@layer base {
+    :where(button, select, input[type='button'], input[type='submit'], input[type='reset']):enabled {
+        cursor: pointer;
+    }
+}
