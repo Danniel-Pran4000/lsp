@@ -4,16 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PlanRentalRequest;
 use App\Http\Requests\StoreRentalRequest;
+use App\Models\Garage;
 use App\Models\Rental;
 use App\Services\RentalCalculator;
 use App\Services\RentalService;
+use App\Support\Rupiah;
 use Brick\Math\BigInteger;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RentalController extends Controller
 {
@@ -32,68 +37,94 @@ class RentalController extends Controller
         $rentals = $ownRentals->with('garage')
             ->withSum('extensions', 'amount')
             ->orderByDesc('starts_on')->orderByDesc('id')
-            ->paginate(20)
+            ->paginate(15)
             ->through(function (Rental $rental): array {
                 $total = BigInteger::of($rental->initial_total)->plus($rental->extensions_sum_amount ?? 0);
 
                 return [
+                    'id' => $rental->id,
                     'unit' => $rental->garage->code,
                     'vehicle' => $rental->brand.' '.$rental->vehicle_model,
-                    'start' => CarbonImmutable::parse($rental->starts_on)->format('d M Y'),
-                    'end' => CarbonImmutable::parse($rental->ends_on)->format('d M Y'),
-                    'total' => 'IDR '.preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', (string) $total),
+                    'start' => CarbonImmutable::parse($rental->starts_on)->locale('id')->translatedFormat('d M Y'),
+                    'end' => CarbonImmutable::parse($rental->ends_on)->locale('id')->translatedFormat('d M Y'),
+                    'total' => Rupiah::format($total),
                 ];
             });
 
         return view('user.rentals', compact('rentals', 'activeCount', 'canCreateRental'));
     }
 
-    public function create(PlanRentalRequest $request, RentalCalculator $calculator): View|RedirectResponse
+    public function show(Request $request, Rental $rental): View
     {
-        if ($request->isUpdatingVehicleCategory()) {
-            return to_route('rentals.create')->withInput([
-                ...$request->except('_token', 'vehicle_selection'),
-                'vehicle_category' => $request->validated('vehicle_selection'),
-            ]);
-        }
-        if ($request->isUpdatingRentalType()) {
-            $rentalType = $request->validated('rental_type_selection');
-            $inputs = $request->except('_token', 'rental_type_selection');
-            if ($rentalType !== $request->input('rental_type')) {
-                unset($inputs['days']);
-            }
+        $this->ensureOwner($request, $rental);
+        $rental->load(['garage', 'user'])->loadSum('extensions', 'amount');
+        $extensions = $rental->extensions()->orderBy('id')->paginate(15);
+        $originalEnd = $rental->extensions()->orderBy('id')->value('old_end') ?? $rental->ends_on;
+        $total = BigInteger::of($rental->initial_total)->plus($rental->extensions_sum_amount ?? 0);
 
-            return to_route('rentals.create')->withInput([...$inputs, 'rental_type' => $rentalType]);
-        }
+        return view('user.detail-rental', [
+            ...compact('rental', 'extensions', 'total', 'originalEnd'),
+            'vehicle' => Rental::VEHICLE_LABELS[$rental->vehicle_category] ?? $rental->vehicle_category,
+            'duration' => Rental::DURATION_LABELS[$rental->rental_type] ?? $rental->rental_type,
+            'garageType' => Garage::TYPE_LABELS[$rental->garage->type],
+        ]);
+    }
 
+    public function proof(Request $request, Rental $rental, ?int $extension = null): StreamedResponse
+    {
+        $this->ensureOwner($request, $rental);
+        $path = $extension === null
+            ? $rental->proof_path
+            : $rental->extensions()->findOrFail($extension)->proof_path;
+
+        $disk = Storage::disk('local');
+        abort_unless($path && $disk->exists($path), 404);
+        $mime = $disk->mimeType($path);
+        abort_unless(in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/x-ms-bmp', 'image/webp'], true), 404);
+
+        return $disk->response($path, headers: [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function create(PlanRentalRequest $request, RentalCalculator $calculator): View
+    {
         return view('user.rental-create', $this->plan($request, $calculator));
     }
 
-    public function available(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): View
+    public function available(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View
     {
         $plan = $this->plan($request, $calculator);
         $selectedGarageType = $request->validated('garage_type');
 
         if (! in_array($selectedGarageType, $plan['garageTypes'], true)) {
-            throw ValidationException::withMessages(['garage_type' => 'The garage type is not compatible with the vehicle.'])
+            throw ValidationException::withMessages(['garage_type' => 'Tipe garasi tidak sesuai dengan kendaraan.'])
                 ->redirectTo(route('rentals.create'));
+        }
+
+        $garages = $rentals->availableUnits($selectedGarageType, $plan['start'], $plan['end']);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'end' => $plan['end']->format('d/m/Y'),
+                'units' => $garages->map->only(['id', 'code'])->values(),
+            ]);
         }
 
         return view('user.rental-create', [
             ...$plan,
             'selectedGarageType' => $selectedGarageType,
-            'garages' => $rentals->availableUnits($selectedGarageType, $plan['start'], $plan['end']),
+            'garages' => $garages,
         ]);
     }
 
-    public function preview(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): View|RedirectResponse
+    public function preview(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View|RedirectResponse
     {
         if ($request->isMethod('post')) {
             $plan = $this->plan($request, $calculator);
             if (! in_array($plan['details']['garage_type'], $plan['garageTypes'], true)) {
-                return to_route('rentals.create')
-                    ->withErrors(['garage_type' => 'The garage type is not compatible with the vehicle.'])
-                    ->withInput($plan['details']);
+                return $this->previewError($request, ['garage_type' => 'Tipe garasi tidak sesuai dengan kendaraan.'], $plan['details']);
             }
 
             $request->session()->put('rental_quote', [
@@ -103,7 +134,9 @@ class RentalController extends Controller
                 'ends_on' => $plan['end']->toDateString(),
             ]);
 
-            return to_route('rentals.preview');
+            if (! $request->expectsJson()) {
+                return to_route('rentals.preview');
+            }
         }
 
         $quote = $request->session()->get('rental_quote');
@@ -116,22 +149,18 @@ class RentalController extends Controller
         $details = $quote['details'];
 
         if ($start->lessThan(CarbonImmutable::today())) {
-            return to_route('rentals.create')
-                ->withErrors(['quote' => 'The start date has passed. Choose a new start date.'])
-                ->withInput($details);
+            return $this->previewError($request, ['quote' => 'Tanggal mulai sudah berlalu. Pilih tanggal mulai yang baru.'], $details);
         }
 
         $garage = $rentals->availableUnits($details['garage_type'], $start, $end)->find($details['garage_id']);
         if (! $garage) {
-            return to_route('rentals.create')
-                ->withErrors(['garage_id' => 'This unit is no longer available. Choose another unit.'])
-                ->withInput($details);
+            return $this->previewError($request, ['garage_id' => 'Unit ini sudah tidak tersedia. Pilih unit lain.'], $details);
         }
 
         try {
             $charge = $calculator->initialCharge($garage, $details);
         } catch (ValidationException $exception) {
-            return to_route('rentals.create')->withErrors($exception->errors())->withInput($details);
+            return $this->previewError($request, $exception->errors(), $details);
         }
 
         $quoteId = (string) Str::uuid();
@@ -141,7 +170,15 @@ class RentalController extends Controller
             'kwh_rate' => $charge['kwh_rate'],
         ]));
 
-        return view('user.rental-preview', compact('garage', 'start', 'end', 'charge', 'quoteId'));
+        $summary = compact('garage', 'start', 'end', 'charge');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'quoteId' => $quoteId,
+                'summary' => view('user.rental-summary', $summary)->render(),
+            ]);
+        }
+
+        return view('user.rental-preview', [...$summary, 'quoteId' => $quoteId]);
     }
 
     public function store(StoreRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): RedirectResponse
@@ -149,7 +186,7 @@ class RentalController extends Controller
         $quote = $request->session()->get('rental_quote');
         if (($quote['user_id'] ?? null) !== $request->user()->id || ($quote['id'] ?? null) !== $request->validated('quote_id')) {
             return to_route('rentals.preview')->withErrors([
-                'quote' => 'Review the payment details and upload payment proof again.',
+                'quote' => 'Tinjau rincian pembayaran dan unggah ulang bukti pembayaran.',
             ]);
         }
 
@@ -161,7 +198,22 @@ class RentalController extends Controller
 
         $request->session()->forget('rental_quote');
 
-        return to_route('rentals.index')->with('status', "Rental for {$rental->brand} {$rental->vehicle_model} saved. Unit {$rental->garage->code}.");
+        return to_route('rentals.index')->with('status', "Sewa {$rental->brand} {$rental->vehicle_model} berhasil disimpan. Unit {$rental->garage->code}.");
+    }
+
+    private function ensureOwner(Request $request, Rental $rental): void
+    {
+        $user = $request->user();
+        abort_unless($user->role === 'user' && (string) $rental->user_id === (string) $user->id, 404);
+    }
+
+    private function previewError(PlanRentalRequest $request, array $errors, array $details): RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return to_route('rentals.create')->withErrors($errors)->withInput($details);
     }
 
     private function plan(PlanRentalRequest $request, RentalCalculator $calculator): array
@@ -176,34 +228,21 @@ class RentalController extends Controller
             $details['days'] = (int) ($details['days'] ?? 0);
             $end = $calculator->endDate($start, (int) ($details['months'] ?? 0), (int) $details['days']);
             if ($end->year > 9999) {
-                throw ValidationException::withMessages(['days' => 'The end date exceeds the supported date range.'])
+                throw ValidationException::withMessages(['days' => 'Tanggal selesai melampaui rentang tanggal yang didukung.'])
                     ->redirectTo(route('rentals.create'));
             }
 
-            $garageTypes = match ($details['vehicle_category']) {
-                'bicycle', 'motorcycle' => ['S'],
-                'gas_car' => ['C'],
-                'electric_car' => ['C', 'E'],
-            };
+            $garageTypes = Rental::COMPATIBLE_GARAGES[$details['vehicle_category']];
         }
 
-        $vehicleCategory = $details['vehicle_category'] ?? $request->old('vehicle_category', 'bicycle');
-        $rentalType = $details['rental_type'] ?? $request->old('rental_type', 'daily');
+        $details = $details ?: $request->session()->get('rental_quote.details', []);
 
         return [
             ...compact('start', 'end', 'details', 'garageTypes'),
-            'vehicleCategory' => $vehicleCategory,
-            'rentalType' => $rentalType,
-            'isMonthly' => $rentalType === 'monthly',
-            'needsPlate' => $vehicleCategory !== 'bicycle',
-            'needsBattery' => $vehicleCategory === 'electric_car',
-            'vehicles' => [
-                'bicycle' => 'Bicycle',
-                'motorcycle' => 'Motorcycle',
-                'gas_car' => 'Petrol car',
-                'electric_car' => 'Electric car',
-            ],
-            'garageLabels' => ['S' => 'Bicycle (S)', 'C' => 'Petrol car (C)', 'E' => 'Electric car (E)'],
+            'vehicles' => Rental::VEHICLE_LABELS,
+            'durations' => Rental::DURATION_LABELS,
+            'garageLabels' => Garage::TYPE_LABELS,
+            'compatibleGarages' => Rental::COMPATIBLE_GARAGES,
         ];
     }
 }

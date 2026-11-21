@@ -29,7 +29,7 @@ class RentalCalculator
     public function initialCharge(Garage $garage, array $details): array
     {
         if ($details['vehicle_category'] === 'electric_car' && ! isset($details['remaining_percent'])) {
-            throw ValidationException::withMessages(['remaining_percent' => 'Enter the remaining battery percentage.']);
+            throw ValidationException::withMessages(['remaining_percent' => 'Masukkan persentase sisa baterai.']);
         }
 
         $dailyRate = BigDecimal::of((string) $garage->daily_rate)->toScale(2);
@@ -41,7 +41,7 @@ class RentalCalculator
 
         if ($garage->type === 'E') {
             if ($garage->kwh_rate === null) {
-                throw ValidationException::withMessages(['garage_id' => 'The electricity rate is unavailable for this unit.']);
+                throw ValidationException::withMessages(['garage_id' => 'Tarif listrik untuk unit ini belum tersedia.']);
             }
 
             $kwhRate = BigDecimal::of((string) $garage->kwh_rate)->toScale(2);
@@ -54,7 +54,7 @@ class RentalCalculator
         $total = $rentalAmount->plus($electricityAmount)->toScale(0, RoundingMode::HalfUp);
 
         if ($electricityAmount->compareTo('1000000000000000') >= 0 || $total->compareTo(PHP_INT_MAX) > 0) {
-            throw ValidationException::withMessages(['garage_id' => 'The charge exceeds the supported limit. Check the duration or choose another unit.']);
+            throw ValidationException::withMessages(['garage_id' => 'Biaya melebihi batas yang didukung. Periksa durasi atau pilih unit lain.']);
         }
 
         return [
@@ -71,7 +71,7 @@ class RentalCalculator
     {
         $oldEnd = CarbonImmutable::parse($rental->ends_on);
         if ($newEnd->lessThanOrEqualTo($oldEnd)) {
-            throw ValidationException::withMessages(['ends_on' => 'The new end date must be after the current end date.']);
+            throw ValidationException::withMessages(['ends_on' => 'Tanggal selesai baru harus setelah tanggal selesai saat ini.']);
         }
 
         $days = (int) $oldEnd->diffInDays($newEnd);

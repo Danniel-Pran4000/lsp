@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportRequest;
 use App\Models\Extension;
+use App\Models\Garage;
 use App\Models\Rental;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -23,10 +25,10 @@ class ReportController extends Controller
         $garageType = $filters['garage_type'] ?? null;
         $userId = isset($filters['user_id']) ? (int) $filters['user_id'] : null;
         $monthNames = [
-            1 => 'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December',
+            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
         ];
-        $garageTypes = ['S' => 'Bicycle', 'C' => 'Petrol car', 'E' => 'Electric car'];
+        $garageTypes = Garage::TYPE_LABELS;
         $renters = collect();
 
         $rentals = Rental::query();
@@ -78,13 +80,22 @@ class ReportController extends Controller
 
         $rentalTotals = $this->totalsByGroup($rentals, $rentalGroup, 'rentals.initial_total');
         $extensionTotals = $this->totalsByGroup($extensions, $extensionGroup, 'extensions.amount');
+        $lastSummaryPage = max(1, (int) ceil(count($groups) / 15));
+        $summaryPage = min(LengthAwarePaginator::resolveCurrentPage('summary_page'), $lastSummaryPage);
+        $groups = (new LengthAwarePaginator(
+            array_slice($groups, ($summaryPage - 1) * 15, 15, true),
+            count($groups),
+            15,
+            $summaryPage,
+            ['path' => $request->url(), 'pageName' => 'summary_page'],
+        ))->withQueryString();
 
         $rentalDetails = $rentals->with(['garage', 'user'])
             ->orderByDesc('rentals.starts_on')->orderByDesc('rentals.id')
-            ->simplePaginate(20, ['rentals.*'], 'rental_page')->appends($filters);
+            ->simplePaginate(15, ['rentals.*'], 'rental_page')->withQueryString();
         $extensionDetails = $extensions->with(['rental.garage', 'rental.user'])
             ->orderByDesc('extensions.extended_on')->orderByDesc('extensions.id')
-            ->simplePaginate(20, ['extensions.*'], 'extension_page')->appends($filters);
+            ->simplePaginate(15, ['extensions.*'], 'extension_page')->withQueryString();
 
         return view('admin.reports', compact(
             'mode', 'year', 'month', 'garageType', 'userId', 'monthNames', 'garageTypes', 'renters',

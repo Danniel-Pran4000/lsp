@@ -1,0 +1,17 @@
+{
+    "Forbidden": "Akses ditolak",
+    "Go to page :page": "Buka halaman :page",
+    "Not Found": "Halaman tidak ditemukan",
+    "Page Expired": "Sesi halaman telah berakhir",
+    "Pagination Navigation": "Navigasi halaman",
+    "Server Error": "Terjadi kesalahan pada server",
+    "Service Unavailable": "Layanan sedang tidak tersedia",
+    "Showing": "Menampilkan",
+    "The given data was invalid.": "Data yang dikirim tidak valid.",
+    "Too Many Attempts.": "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+    "Too Many Requests": "Terlalu banyak permintaan",
+    "Unauthorized": "Anda perlu masuk",
+    "of": "dari",
+    "results": "hasil",
+    "to": "sampai"
+}

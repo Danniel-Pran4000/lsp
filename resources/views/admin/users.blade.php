@@ -1,18 +1,18 @@
 @extends('layouts.header')
-@section('title', 'Users')
+@section('title', 'Pengguna')
 
 @section('content')
-    <p class="mb-5 text-sm text-stone-600">Check identification before making a decision.</p>
+    <p class="mb-5 text-sm text-stone-600">Periksa identitas sebelum menyetujui atau menolak pendaftaran.</p>
     <div class="overflow-x-auto rounded-xl border border-stone-200">
         <table class="w-full min-w-max text-left text-sm">
             <thead class="bg-red-50 text-xs font-semibold tracking-wide text-red-900">
                 <tr>
-                    <th scope="col" class="px-4 py-3">Name</th>
+                    <th scope="col" class="px-4 py-3">Nama</th>
                     <th scope="col" class="px-4 py-3">NIK</th>
-                    <th scope="col" class="px-4 py-3">Phone</th>
+                    <th scope="col" class="px-4 py-3">Telepon</th>
                     <th scope="col" class="px-4 py-3">Email</th>
                     <th scope="col" class="px-4 py-3">Status</th>
-                    <th scope="col" class="px-4 py-3 text-right">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-right">Tindakan</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
@@ -29,9 +29,9 @@
                                 'bg-red-50 text-red-800' => $user->approval_status === 'rejected',
                                 'bg-amber-50 text-amber-900' => ! in_array($user->approval_status, ['approved', 'rejected'], true),
                             ])>{{ match ($user->approval_status) {
-                                'approved' => 'Approved',
-                                'rejected' => 'Rejected',
-                                default => 'Pending',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                                default => 'Menunggu persetujuan',
                             } }}</span>
                         </td>
                         <td class="px-4 py-4 text-right">
@@ -39,16 +39,16 @@
                                 @csrf
                                 @method('PATCH')
                                 @if ($user->approval_status !== 'approved')
-                                    <button class="inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" type="submit" name="decision" value="approved">Approve</button>
+                                    <button class="inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" type="submit" name="decision" value="approved">Setujui</button>
                                 @endif
                                 @if ($user->approval_status !== 'rejected')
-                                    <button class="inline-block rounded-lg border border-red-200 px-3 py-2 text-sm font-medium whitespace-nowrap text-red-800 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" type="submit" name="decision" value="rejected">Reject</button>
+                                    <button class="inline-block rounded-lg border border-red-200 px-3 py-2 text-sm font-medium whitespace-nowrap text-red-800 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" type="submit" name="decision" value="rejected">Tolak</button>
                                 @endif
                             </form>
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="px-4 py-10 text-center text-stone-600" colspan="6">No users found.</td></tr>
+                    <tr><td class="px-4 py-10 text-center text-stone-600" colspan="6">Belum ada pengguna.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -22,7 +22,7 @@ class SessionController extends Controller
         ]);
 
         if (! Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'Invalid email or password.'])->onlyInput('email');
+            return back()->withErrors(['email' => 'Email atau kata sandi tidak sesuai.'])->onlyInput('email');
         }
 
         $request->session()->regenerate();

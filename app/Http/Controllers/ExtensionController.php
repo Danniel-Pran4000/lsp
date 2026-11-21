@@ -21,7 +21,7 @@ class ExtensionController extends Controller
             ->where('starts_on', '<=', $today)
             ->where('ends_on', '>=', $today)
             ->orderBy('ends_on')->orderBy('id')
-            ->simplePaginate(20);
+            ->simplePaginate(15);
 
         return view('admin.active-rentals', compact('rentals'));
     }
@@ -63,7 +63,7 @@ class ExtensionController extends Controller
             || ($quote['rental_id'] ?? null) !== $rental->id
             || ($quote['id'] ?? null) !== $request->validated('quote_id')) {
             return to_route('extensions.preview', $rental)
-                ->withErrors(['quote' => 'Recalculate the extension charge before saving.']);
+                ->withErrors(['quote' => 'Hitung ulang biaya perpanjangan sebelum menyimpan.']);
         }
 
         try {
@@ -75,6 +75,6 @@ class ExtensionController extends Controller
 
         $request->session()->forget('extension_quote');
 
-        return to_route('admin.rentals')->with('status', "Rental for {$rental->brand} {$rental->vehicle_model} extended. Unit {$rental->garage->code}.");
+        return to_route('admin.rentals')->with('status', "Sewa {$rental->brand} {$rental->vehicle_model} berhasil diperpanjang. Unit {$rental->garage->code}.");
     }
 }

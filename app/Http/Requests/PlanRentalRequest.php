@@ -10,18 +10,6 @@ class PlanRentalRequest extends FormRequest
 {
     protected $redirectRoute = 'rentals.create';
 
-    public function isUpdatingVehicleCategory(): bool
-    {
-        return $this->isMethod('post') && $this->routeIs('rentals.create')
-            && $this->has('vehicle_selection');
-    }
-
-    public function isUpdatingRentalType(): bool
-    {
-        return $this->isMethod('post') && $this->routeIs('rentals.create')
-            && $this->has('rental_type_selection');
-    }
-
     public function rules(): array
     {
         if (! $this->isMethod('post')) {
@@ -29,13 +17,6 @@ class PlanRentalRequest extends FormRequest
         }
 
         $vehicleCategory = ['required', 'in:bicycle,motorcycle,gas_car,electric_car'];
-        if ($this->isUpdatingVehicleCategory()) {
-            return ['vehicle_selection' => $vehicleCategory];
-        }
-        if ($this->isUpdatingRentalType()) {
-            return ['rental_type_selection' => ['required', 'in:daily,monthly']];
-        }
-
         // Batasi input bulanan ke ukuran yang dapat diproses dalam rentang kolom DATE.
         $days = $this->input('rental_type') === 'monthly'
             ? ['nullable', 'integer', 'between:0,3652058']
@@ -58,6 +39,10 @@ class PlanRentalRequest extends FormRequest
             $rules['garage_type'] = ['required', 'in:S,C,E'];
         }
 
+        if ($this->routeIs('rentals.available') && $this->expectsJson()) {
+            unset($rules['brand'], $rules['vehicle_model'], $rules['plate'], $rules['battery_kwh'], $rules['remaining_percent']);
+        }
+
         if ($this->routeIs('rentals.preview')) {
             $rules['garage_id'] = ['required', 'integer', 'min:1'];
         }
@@ -68,7 +53,7 @@ class PlanRentalRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if (! $this->isMethod('post') || $this->isUpdatingVehicleCategory() || $this->isUpdatingRentalType()
+            if (! $this->isMethod('post')
                 || $this->input('rental_type') !== 'daily'
                 || $validator->errors()->has('starts_on') || $validator->errors()->has('days')) {
                 return;
@@ -77,7 +62,7 @@ class PlanRentalRequest extends FormRequest
             $start = CarbonImmutable::parse($this->input('starts_on') ?? 'today');
             $maximum = $start->daysInMonth - 1;
             if ((int) $this->input('days') > $maximum) {
-                $validator->errors()->add('days', "The maximum daily rental duration is {$maximum} days for the selected start month.");
+                $validator->errors()->add('days', "Durasi sewa harian maksimal {$maximum} hari untuk bulan mulai yang dipilih.");
             }
         }];
     }

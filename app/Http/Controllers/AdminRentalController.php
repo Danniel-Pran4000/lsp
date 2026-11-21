@@ -13,16 +13,11 @@ class AdminRentalController extends Controller
     public function index(Request $request): View
     {
         $types = Garage::TYPE_LABELS;
-        $vehicleTypes = [
-            'bicycle' => 'Bicycle',
-            'motorcycle' => 'Motorcycle',
-            'gas_car' => 'Petrol car',
-            'electric_car' => 'Electric car',
-        ];
+        $vehicleTypes = Rental::VEHICLE_LABELS;
         $query = Rental::with(['garage', 'user']);
         $selectedType = TypeFilter::apply($query, $request->query('type'), 'garage');
         $rentals = $query->orderByDesc('starts_on')->orderByDesc('id')
-            ->paginate(20)->appends(['type' => $selectedType]);
+            ->paginate(15)->appends(['type' => $selectedType]);
 
         return view('admin.rentals', compact('rentals', 'types', 'vehicleTypes', 'selectedType'));
     }

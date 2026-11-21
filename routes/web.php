@@ -31,11 +31,14 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/account', [SessionController::class, 'show'])->name('account.show');
     Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
+    Route::get('/rentals/{rental}', [RentalController::class, 'show'])->whereNumber('rental')->name('rentals.show');
+    Route::get('/rentals/{rental}/proof/{extension?}', [RentalController::class, 'proof'])
+        ->whereNumber(['rental', 'extension'])->name('rentals.proof');
     Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
 });
 
 Route::middleware(['auth', EnsureApprovedRenter::class])->group(function () {
-    Route::match(['get', 'post'], '/rentals/create', [RentalController::class, 'create'])->name('rentals.create');
+    Route::get('/rentals/create', [RentalController::class, 'create'])->name('rentals.create');
     Route::post('/rentals/available', [RentalController::class, 'available'])->name('rentals.available');
     Route::match(['get', 'post'], '/rentals/preview', [RentalController::class, 'preview'])->name('rentals.preview');
     Route::post('/rentals', [RentalController::class, 'store'])->name('rentals.store');

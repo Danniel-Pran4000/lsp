@@ -21,38 +21,36 @@ class GarageController extends Controller
         $types = Garage::TYPE_LABELS;
         $query = $rentals->availableToday(CarbonImmutable::today());
         $selectedType = TypeFilter::apply($query, $request->query('type'));
-        $garages = $query->orderBy('code')->paginate(20)->appends(['type' => $selectedType]);
+        $garages = $query->orderBy('code')->paginate(15)->appends(['type' => $selectedType]);
 
         return view('admin.garages', compact('garages', 'types', 'selectedType'));
     }
 
     public function create(): View
     {
-        return view('admin.garage-create', ['type' => old('type', 'S')]);
+        return view('admin.garage-create', [
+            'type' => old('type', 'S'),
+            'types' => Garage::TYPE_LABELS,
+            'maxUnits' => Garage::MAX_UNITS_PER_TYPE,
+        ]);
     }
 
     public function storeBatch(StoreGarageBatchRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        if (isset($data['type_selection'])) {
-            return to_route('garages.create')->withInput([
-                ...$request->only('quantity', 'daily_rate', 'kwh_rate'),
-                'type' => $data['type_selection'],
-            ]);
-        }
         $type = $data['type'];
         $quantity = (int) $data['quantity'];
         // Kode berawalan sama dengan tiga digit dapat diurutkan sebagai teks.
-        $garagesOfType = Garage::whereBetween('code', [$type.'001', $type.'999']);
+        $garagesOfType = Garage::whereBetween('code', [$type.'001', $type.Garage::MAX_UNITS_PER_TYPE]);
 
         try {
             $codes = DB::transaction(function () use ($garagesOfType, $type, $quantity, $data): array {
                 $lastNumber = (int) substr($garagesOfType->max('code') ?? '', 1);
-                $remaining = 999 - $lastNumber;
+                $remaining = Garage::MAX_UNITS_PER_TYPE - $lastNumber;
 
                 if ($quantity > $remaining) {
                     throw ValidationException::withMessages([
-                        'quantity' => "Remaining unit codes for garage type {$type}: {$remaining}.",
+                        'quantity' => "Sisa kapasitas tipe garasi {$type} adalah {$remaining} unit.",
                     ]);
                 }
 
@@ -72,14 +70,14 @@ class GarageController extends Controller
             }, 3);
         } catch (UniqueConstraintViolationException) {
             // Transaksi sudah dibatalkan. Baca kapasitas setelah batch lain tersimpan.
-            $remaining = 999 - (int) substr($garagesOfType->max('code') ?? '', 1);
+            $remaining = Garage::MAX_UNITS_PER_TYPE - (int) substr($garagesOfType->max('code') ?? '', 1);
 
             throw ValidationException::withMessages([
-                'quantity' => "Another batch used these codes. {$remaining} unit codes remain. Check the quantity and try again.",
+                'quantity' => "Kode sudah dipakai oleh pembuatan unit lain. Tersisa {$remaining} unit. Periksa jumlah lalu coba lagi.",
             ]);
         }
 
-        return to_route('admin.rentals')
-            ->with('status', Garage::TYPE_LABELS[$type].' garage units created. Unit codes: '.implode(', ', $codes).'.');
+        return to_route('garages.index')
+            ->with('status', count($codes).' unit berhasil ditambahkan. Kode unit '.implode(', ', $codes).'.');
     }
 }

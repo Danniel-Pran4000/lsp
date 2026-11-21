@@ -57,18 +57,18 @@ class RentalService
             abort_unless(User::query()->lockForUpdate()->find($user->id)?->canRent(), 403);
 
             if ($start->lessThan($today)) {
-                throw ValidationException::withMessages(['quote' => 'The start date has passed. Choose a new start date.']);
+                throw ValidationException::withMessages(['quote' => 'Tanggal mulai sudah berlalu. Pilih tanggal mulai yang baru.']);
             }
 
             if (! $garage || $garage->type !== $details['garage_type']
                 || $this->overlappingRentals($start, $end)->where('garage_id', $garage->id)->exists()
                 || (! $start->isSameDay($today) && $this->overlappingRentals($today, $today)->where('garage_id', $garage->id)->exists())) {
-                throw ValidationException::withMessages(['garage_id' => 'This unit is no longer available. Choose another unit.']);
+                throw ValidationException::withMessages(['garage_id' => 'Unit ini sudah tidak tersedia. Pilih unit lain.']);
             }
 
             $charge = $calculator->initialCharge($garage, $details);
             if ($charge['daily_rate'] !== $quote['daily_rate'] || $charge['kwh_rate'] !== $quote['kwh_rate']) {
-                throw ValidationException::withMessages(['quote' => 'The rate has changed. Review the new total and upload payment proof again.']);
+                throw ValidationException::withMessages(['quote' => 'Tarif berubah. Tinjau total baru dan unggah ulang bukti pembayaran.']);
             }
 
             $rental = new Rental;
@@ -106,7 +106,7 @@ class RentalService
             ->where('garage_id', $rental->garage_id)
             ->whereKeyNot($rental->id)
             ->exists()) {
-            throw ValidationException::withMessages(['ends_on' => 'The extension overlaps another rental for this unit.']);
+            throw ValidationException::withMessages(['ends_on' => 'Periode perpanjangan bertabrakan dengan sewa lain untuk unit ini.']);
         }
 
         return $charge;
@@ -121,14 +121,14 @@ class RentalService
             abort_unless(User::find($admin->id)?->role === 'admin', 403);
 
             if ($currentRental->ends_on !== $quote['old_end']) {
-                throw ValidationException::withMessages(['ends_on' => 'The end date has changed. Recalculate the extension charge.']);
+                throw ValidationException::withMessages(['ends_on' => 'Tanggal selesai berubah. Hitung ulang biaya perpanjangan.']);
             }
 
             $today = CarbonImmutable::today();
             $newEnd = CarbonImmutable::parse($quote['new_end']);
             $charge = $this->extensionDetails($currentRental, $newEnd, $calculator);
             if ($charge['amount'] !== $quote['amount']) {
-                throw ValidationException::withMessages(['ends_on' => 'The charge has changed. Recalculate the extension charge.']);
+                throw ValidationException::withMessages(['ends_on' => 'Biaya berubah. Hitung ulang biaya perpanjangan.']);
             }
 
             $extension = Extension::create([
@@ -157,7 +157,7 @@ class RentalService
         $disk = Storage::disk('local');
         $path = $disk->putFile($directory, $proof);
         if ($path === false) {
-            throw ValidationException::withMessages(['proof' => 'Payment proof upload failed. Please try again.']);
+            throw ValidationException::withMessages(['proof' => 'Bukti pembayaran gagal diunggah. Silakan coba lagi.']);
         }
 
         try {
