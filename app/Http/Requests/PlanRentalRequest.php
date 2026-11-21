@@ -77,7 +77,7 @@ class PlanRentalRequest extends FormRequest
             $start = CarbonImmutable::parse($this->input('starts_on') ?? 'today');
             $maximum = $start->daysInMonth - 1;
             if ((int) $this->input('days') > $maximum) {
-                $validator->errors()->add('days', "Maksimal sewa harian adalah {$maximum} hari pada bulan tanggal mulai.");
+                $validator->errors()->add('days', "The maximum daily rental duration is {$maximum} days for the selected start month.");
             }
         }];
     }
