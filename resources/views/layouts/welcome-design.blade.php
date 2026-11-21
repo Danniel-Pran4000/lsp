@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | Garage Rental</title>
+    <title>@yield('title') | GarageRental</title>
     @vite('resources/css/app.css')
 </head>
 <body class="bg-white font-[Poppins,sans-serif] text-neutral-900">
@@ -14,7 +14,7 @@
             <div aria-hidden="true" class="pointer-events-none absolute -bottom-36 -left-28 -z-10 size-[28rem] rounded-full border border-white/20"></div>
 
             <p class="text-3xl leading-tight font-semibold tracking-tight sm:text-4xl xl:text-5xl">
-                Welcome to<br>Garage Rental
+                Welcome to<br>GarageRental
             </p>
 
             <div aria-hidden="true" class="mt-12 hidden max-w-sm border-b border-white/30 lg:flex lg:items-end lg:gap-4">

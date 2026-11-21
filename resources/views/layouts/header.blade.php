@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | Garage Rental</title>
+    <title>@yield('title') | GarageRental</title>
     @vite('resources/css/app.css')
 </head>
 <body class="m-0 bg-stone-50 font-[Poppins,sans-serif] text-neutral-900">

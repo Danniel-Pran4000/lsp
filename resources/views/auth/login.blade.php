@@ -34,6 +34,6 @@
     </form>
 
     <p class="mt-6 text-center text-sm text-stone-600">
-        New to Garage Rental? <a class="font-semibold text-red-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-700" href="{{ route('register') }}">Create an account</a>
+        New to GarageRental? <a class="font-semibold text-red-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-700" href="{{ route('register') }}">Create an account</a>
     </p>
 @endsection
