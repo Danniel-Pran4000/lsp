@@ -8,14 +8,20 @@ use PHPUnit\Framework\TestCase;
 
 class UserTest extends TestCase
 {
+    /**
+     * Periksa kelayakan membuat sewa dari kombinasi peran dan keputusan persetujuan.
+     */
     #[DataProvider('accountStates')]
-    public function test_only_approved_renters_can_rent(string $role, ?string $status, bool $expected): void
+    public function testOnlyApprovedRentersCanRent(string $role, ?string $status, bool $expected): void
     {
         $user = (new User)->forceFill(['role' => $role, 'approval_status' => $status]);
 
         $this->assertSame($expected, $user->canRent());
     }
 
+    /**
+     * Sediakan kondisi akun yang boleh dan yang belum boleh membuat sewa.
+     */
     public static function accountStates(): array
     {
         return [

@@ -8,6 +8,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureApprovedRenter
 {
+    /**
+     * Periksa persetujuan akun sebelum penyewa dapat merencanakan atau mengonfirmasi sewa baru.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         abort_unless($request->user()?->canRent(), 403);

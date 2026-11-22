@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Sediakan kolom sisa energi yang boleh kosong untuk skema yang mendukung nilai kWh.
+     */
     public function up(): void
     {
         Schema::table('rentals', function (Blueprint $table) {
@@ -13,6 +16,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Lepaskan kolom sisa kWh saat kembali ke versi skema sebelumnya.
+     */
     public function down(): void
     {
         Schema::table('rentals', function (Blueprint $table) {

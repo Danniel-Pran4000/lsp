@@ -12,7 +12,10 @@ class RentalAvailabilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_search_filters_by_type_and_checks_both_ends_of_the_period(): void
+    /**
+     * Periksa tipe unit dan benturan pada kedua batas tanggal pencarian.
+     */
+    public function testSearchFiltersByTypeAndChecksBothEndsOfThePeriod(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
@@ -47,25 +50,34 @@ class RentalAvailabilityTest extends TestCase
             ->assertDontSee('S003')->assertDontSee('S004');
     }
 
-    public function test_search_offers_a_compatible_type_and_explains_empty_results(): void
+    /**
+     * Pastikan formulir menjelaskan hasil kosong dan menolak pasangan kendaraan serta garasi yang tidak cocok.
+     */
+    public function testSearchOffersACompatibleTypeAndExplainsEmptyResults(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
 
-        $this->actingAs($user)->post(route('rentals.create'), $this->searchInput())
-            ->assertOk()->assertSee('Find available units');
+        $this->actingAs($user)->get(route('rentals.create'))
+            ->assertOk()->assertSee('Pilih unit');
         $this->post(route('rentals.available'), $this->searchInput())
-            ->assertOk()->assertSee('No units of type Bicycle (S) are available for this period.');
+            ->assertOk()->assertSee('Tidak ada unit kosong pada periode ini.');
         $this->post(route('rentals.available'), array_replace($this->searchInput(), ['garage_type' => 'C']))
             ->assertRedirect(route('rentals.create'))->assertSessionHasErrors('garage_type');
     }
 
-    public function test_pending_renter_cannot_search_for_units(): void
+    /**
+     * Periksa agar penyewa yang masih menunggu persetujuan tidak dapat mencari unit.
+     */
+    public function testPendingRenterCannotSearchForUnits(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'pending']);
 
         $this->actingAs($user)->post(route('rentals.available'), $this->searchInput())->assertForbidden();
     }
 
+    /**
+     * Sediakan rencana sewa sepeda untuk menguji pencarian pada beberapa tanggal.
+     */
     private function searchInput(): array
     {
         return [
@@ -78,6 +90,9 @@ class RentalAvailabilityTest extends TestCase
         ];
     }
 
+    /**
+     * Isi jadwal unit agar batas benturan dapat diuji tanpa melalui formulir pemesanan.
+     */
     private function recordRental(User $user, Garage $garage, string $start, string $end): void
     {
         DB::table('rentals')->insert([

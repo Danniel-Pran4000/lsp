@@ -7,25 +7,34 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Selaraskan nama peran dan kolom pemilik sewa dengan istilah user pada aplikasi.
+     */
     public function up(): void
     {
-        $this->renameUserRole('tenant', 'user');
+        $this->renameRole('tenant', 'user');
 
         Schema::table('rentals', function (Blueprint $table) {
             $table->renameColumn('tenant_id', 'user_id');
         });
     }
 
+    /**
+     * Pulihkan nama peran dan kolom pemilik untuk versi skema sebelumnya.
+     */
     public function down(): void
     {
         Schema::table('rentals', function (Blueprint $table) {
             $table->renameColumn('user_id', 'tenant_id');
         });
 
-        $this->renameUserRole('user', 'tenant');
+        $this->renameRole('user', 'tenant');
     }
 
-    private function renameUserRole(string $oldRole, string $newRole): void
+    /**
+     * Ubah nilai bawaan dan akun yang sudah ada agar keduanya memakai nama peran yang sama.
+     */
+    private function renameRole(string $oldRole, string $newRole): void
     {
         Schema::table('users', function (Blueprint $table) use ($newRole) {
             $table->string('role')->default($newRole)->change();

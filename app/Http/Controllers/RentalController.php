@@ -9,7 +9,6 @@ use App\Models\Rental;
 use App\Services\RentalCalculator;
 use App\Services\RentalService;
 use App\Support\Rupiah;
-use Brick\Math\BigInteger;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,10 +21,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RentalController extends Controller
 {
-    public function index(Request $request): View
+    /**
+     * Tampilkan riwayat milik penyewa yang masuk beserta jumlah sewa aktif dan total setiap transaksi.
+     */
+    public function listRentals(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->role === 'user', 403);
+        abort_unless($user->isRenter(), 403);
 
         $ownRentals = Rental::where('user_id', $user->id);
         $today = CarbonImmutable::today()->toDateString();
@@ -39,42 +41,47 @@ class RentalController extends Controller
             ->withSum('extensions', 'amount')
             ->orderByDesc('starts_on')->orderByDesc('id')
             ->paginate(15)
+            // Format tanggal dan total setelah paginasi agar Blade menerima baris yang siap ditampilkan.
             ->through(function (Rental $rental): array {
-                $total = BigInteger::of($rental->initial_total)->plus($rental->extensions_sum_amount ?? 0);
-
                 return [
                     'id' => $rental->id,
                     'unit' => $rental->garage->code,
                     'vehicle' => $rental->brand.' '.$rental->vehicle_model,
                     'start' => CarbonImmutable::parse($rental->starts_on)->locale('id')->translatedFormat('d M Y'),
                     'end' => CarbonImmutable::parse($rental->ends_on)->locale('id')->translatedFormat('d M Y'),
-                    'total' => Rupiah::format($total),
+                    'total' => Rupiah::formatAmount($rental->totalPaid()),
                 ];
             });
 
         return view('user.rentals', compact('rentals', 'activeCount', 'canCreateRental', 'approvalStatus'));
     }
 
-    public function show(Request $request, Rental $rental): View
+    /**
+     * Sediakan rincian dan riwayat pembayaran yang sama untuk admin dan pemilik transaksi.
+     */
+    public function showRental(Request $request, Rental $rental): View
     {
-        $this->ensureCanView($request, $rental);
+        $this->checkAccess($request, $rental);
         $rental->load(['garage', 'user'])->loadSum('extensions', 'amount');
         $extensions = $rental->extensions()->orderBy('id')->paginate(15);
         $originalEnd = $rental->extensions()->orderBy('id')->value('old_end') ?? $rental->ends_on;
-        $total = BigInteger::of($rental->initial_total)->plus($rental->extensions_sum_amount ?? 0);
+        $total = $rental->totalPaid();
 
         return view('user.detail-rental', [
             ...compact('rental', 'extensions', 'total', 'originalEnd'),
             'vehicle' => Rental::VEHICLE_LABELS[$rental->vehicle_category] ?? $rental->vehicle_category,
             'duration' => Rental::DURATION_LABELS[$rental->rental_type] ?? $rental->rental_type,
             'garageType' => Garage::TYPE_LABELS[$rental->garage->type],
-            'backRoute' => $request->user()->role === 'admin' ? 'admin.rentals' : 'rentals.index',
+            'backRoute' => $request->user()->isAdmin() ? 'admin.rentals' : 'rentals.index',
         ]);
     }
 
-    public function proof(Request $request, Rental $rental, ?int $extension = null): StreamedResponse
+    /**
+     * Kirim gambar dari penyimpanan privat setelah memeriksa akses ke sewa dan kaitan bukti perpanjangannya.
+     */
+    public function serveProof(Request $request, Rental $rental, ?int $extension = null): StreamedResponse
     {
-        $this->ensureCanView($request, $rental);
+        $this->checkAccess($request, $rental);
         $path = $extension === null
             ? $rental->proof_path
             : $rental->extensions()->findOrFail($extension)->proof_path;
@@ -91,14 +98,20 @@ class RentalController extends Controller
         ]);
     }
 
-    public function create(PlanRentalRequest $request, RentalCalculator $calculator): View
+    /**
+     * Siapkan formulir pemesanan dan data isian untuk memulai atau melanjutkan rencana sewa.
+     */
+    public function showForm(PlanRentalRequest $request, RentalCalculator $calculator): View
     {
-        return view('user.rental-create', $this->plan($request, $calculator));
+        return view('user.rental-create', $this->preparePlan($request, $calculator));
     }
 
-    public function available(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View
+    /**
+     * Saring unit menurut kendaraan dan periode untuk dropdown atau formulir pencarian biasa.
+     */
+    public function findUnits(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View
     {
-        $plan = $this->plan($request, $calculator);
+        $plan = $this->preparePlan($request, $calculator);
         $selectedGarageType = $request->validated('garage_type');
 
         if (! in_array($selectedGarageType, $plan['garageTypes'], true)) {
@@ -106,7 +119,7 @@ class RentalController extends Controller
                 ->redirectTo(route('rentals.create'));
         }
 
-        $garages = $rentals->availableUnits($selectedGarageType, $plan['start'], $plan['end']);
+        $garages = $rentals->findUnits($selectedGarageType, $plan['start'], $plan['end']);
         if ($request->expectsJson()) {
             return response()->json([
                 'end' => $plan['end']->format('d/m/Y'),
@@ -121,10 +134,13 @@ class RentalController extends Controller
         ]);
     }
 
-    public function preview(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View|RedirectResponse
+    /**
+     * Hitung tagihan dari tarif unit terkini dan simpan pratinjau di sesi sebagai acuan konfirmasi.
+     */
+    public function previewRental(PlanRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): JsonResponse|View|RedirectResponse
     {
         if ($request->isMethod('post')) {
-            $plan = $this->plan($request, $calculator);
+            $plan = $this->preparePlan($request, $calculator);
             if (! in_array($plan['details']['garage_type'], $plan['garageTypes'], true)) {
                 return $this->previewError($request, ['garage_type' => 'Tipe garasi tidak sesuai dengan kendaraan.'], $plan['details']);
             }
@@ -154,7 +170,7 @@ class RentalController extends Controller
             return $this->previewError($request, ['quote' => 'Tanggal mulai sudah berlalu. Pilih tanggal mulai yang baru.'], $details);
         }
 
-        $garage = $rentals->availableUnits($details['garage_type'], $start, $end)->find($details['garage_id']);
+        $garage = $rentals->findUnits($details['garage_type'], $start, $end)->find($details['garage_id']);
         if (! $garage) {
             return $this->previewError($request, ['garage_id' => 'Unit ini sudah tidak tersedia. Pilih unit lain.'], $details);
         }
@@ -183,7 +199,10 @@ class RentalController extends Controller
         return view('user.rental-preview', [...$summary, 'quoteId' => $quoteId]);
     }
 
-    public function store(StoreRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): RedirectResponse
+    /**
+     * Pastikan bukti pembayaran mengacu pada pratinjau milik akun yang sedang mengonfirmasi.
+     */
+    public function saveRental(StoreRentalRequest $request, RentalCalculator $calculator, RentalService $rentals): RedirectResponse
     {
         $quote = $request->session()->get('rental_quote');
         if (($quote['user_id'] ?? null) !== $request->user()->id || ($quote['id'] ?? null) !== $request->validated('quote_id')) {
@@ -193,7 +212,7 @@ class RentalController extends Controller
         }
 
         try {
-            $rental = $rentals->book($request->user(), $quote, $request->file('proof'), $calculator);
+            $rental = $rentals->bookRental($request->user(), $quote, $request->file('proof'), $calculator);
         } catch (ValidationException $exception) {
             return to_route('rentals.preview')->withErrors($exception->errors());
         }
@@ -203,13 +222,21 @@ class RentalController extends Controller
         return to_route('rentals.index')->with('status', "Sewa {$rental->brand} {$rental->vehicle_model} berhasil disimpan. Unit {$rental->garage->code}.");
     }
 
-    private function ensureCanView(Request $request, Rental $rental): void
+    /**
+     * Terapkan hak akses yang sama pada halaman rincian dan URL foto yang bisa dibuka langsung.
+     * Admin boleh memeriksa semua sewa. Penyewa tetap boleh membaca riwayat miliknya
+     * meskipun status persetujuan akunnya berubah setelah pemesanan.
+     */
+    private function checkAccess(Request $request, Rental $rental): void
     {
         $user = $request->user();
-        $ownsRental = $user->role === 'user' && (string) $rental->user_id === (string) $user->id;
-        abort_unless($user->role === 'admin' || $ownsRental, 404);
+        $ownsRental = $user->isRenter() && (string) $rental->user_id === (string) $user->id;
+        abort_unless($user->isAdmin() || $ownsRental, 404);
     }
 
+    /**
+     * Kirim kesalahan validasi ke formulir interaktif atau kembalikan isian saat penyewa memakai formulir biasa.
+     */
     private function previewError(PlanRentalRequest $request, array $errors, array $details): RedirectResponse
     {
         if ($request->expectsJson()) {
@@ -219,7 +246,10 @@ class RentalController extends Controller
         return to_route('rentals.create')->withErrors($errors)->withInput($details);
     }
 
-    private function plan(PlanRentalRequest $request, RentalCalculator $calculator): array
+    /**
+     * Siapkan tanggal akhir dan tipe garasi yang cocok agar pencarian unit dan pratinjau memakai rencana yang sama.
+     */
+    private function preparePlan(PlanRentalRequest $request, RentalCalculator $calculator): array
     {
         $details = $request->validated();
         $start = CarbonImmutable::parse($details['starts_on'] ?? 'today');

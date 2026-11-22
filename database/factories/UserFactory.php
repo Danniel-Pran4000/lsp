@@ -17,7 +17,7 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Siapkan identitas dan kredensial contoh agar tes dapat membuat pengguna secara terpisah.
      *
      * @return array<string, mixed>
      */

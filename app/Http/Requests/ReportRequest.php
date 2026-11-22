@@ -9,6 +9,9 @@ class ReportRequest extends FormRequest
 {
     protected $redirectRoute = 'reports.index';
 
+    /**
+     * Periksa filter yang berlaku pada mode laporan pilihan agar pencarian memakai periode atau kelompok yang sah.
+     */
     public function rules(): array
     {
         return [

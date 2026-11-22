@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Simpan setiap unit beserta kode unik dan tarif yang ditetapkan admin.
+     */
     public function up(): void
     {
         Schema::create('garages', function (Blueprint $table) {
@@ -19,6 +22,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Hapus tabel unit saat membatalkan pembuatan garasi.
+     */
     public function down(): void
     {
         Schema::dropIfExists('garages');

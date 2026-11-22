@@ -43,18 +43,18 @@
         <section class="rounded-lg border border-stone-200 p-5">
             <h2 class="text-lg font-semibold">Pembayaran</h2>
             <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="{{ $label }}">Tarif harian</dt><dd>{{ \App\Support\Rupiah::format($rental->daily_rate) }}</dd></div>
-                <div><dt class="{{ $label }}">Biaya sewa awal</dt><dd>{{ \App\Support\Rupiah::format($rental->rental_amount) }}</dd></div>
+                <div><dt class="{{ $label }}">Tarif harian</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->daily_rate) }}</dd></div>
+                <div><dt class="{{ $label }}">Biaya sewa awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->rental_amount) }}</dd></div>
                 @if ($rental->kwh_rate !== null)
-                    <div><dt class="{{ $label }}">Tarif per kWh</dt><dd>{{ \App\Support\Rupiah::format($rental->kwh_rate) }}</dd></div>
+                    <div><dt class="{{ $label }}">Tarif per kWh</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->kwh_rate) }}</dd></div>
                     <div><dt class="{{ $label }}">Estimasi energi pengisian</dt><dd>{{ $rental->energy_kwh }} kWh</dd></div>
-                    <div><dt class="{{ $label }}">Biaya listrik</dt><dd>{{ \App\Support\Rupiah::format($rental->electricity_amount) }}</dd></div>
+                    <div><dt class="{{ $label }}">Biaya listrik</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->electricity_amount) }}</dd></div>
                 @endif
-                <div><dt class="{{ $label }}">Pembayaran awal</dt><dd>{{ \App\Support\Rupiah::format($rental->initial_total) }}</dd></div>
-                <div><dt class="{{ $label }}">Total biaya perpanjangan</dt><dd>{{ \App\Support\Rupiah::format($rental->extensions_sum_amount ?? 0) }}</dd></div>
+                <div><dt class="{{ $label }}">Pembayaran awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</dd></div>
+                <div><dt class="{{ $label }}">Total biaya perpanjangan</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->extensions_sum_amount ?? 0) }}</dd></div>
                 <div class="col-span-2 rounded-lg bg-red-50 p-3">
                     <dt>Total pembayaran</dt>
-                    <dd class="text-xl font-semibold text-red-800">{{ \App\Support\Rupiah::format($total) }}</dd>
+                    <dd class="text-xl font-semibold text-red-800">{{ \App\Support\Rupiah::formatAmount($total) }}</dd>
                 </div>
             </dl>
             <h3 class="mb-2 mt-5 text-sm font-semibold">Bukti pembayaran awal</h3>
@@ -83,7 +83,7 @@
                         <td class="px-4 py-3">{{ $extension->extended_on }}</td>
                         <td class="px-4 py-3">{{ $extension->old_end }}</td>
                         <td class="px-4 py-3">{{ $extension->new_end }}</td>
-                        <td class="px-4 py-3">{{ \App\Support\Rupiah::format($extension->amount) }}</td>
+                        <td class="px-4 py-3">{{ \App\Support\Rupiah::formatAmount($extension->amount) }}</td>
                         <td class="px-4 py-3">
                             <a href="{{ route('rentals.proof', [$rental, $extension]) }}">
                                 <img class="h-20 w-auto rounded border border-stone-200 object-contain" loading="lazy"

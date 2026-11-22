@@ -18,13 +18,32 @@ class User extends Authenticatable
 
     public $timestamps = false;
 
-    public function canRent(): bool
+    /**
+     * Tentukan apakah akun berwenang menjalankan tindakan khusus admin.
+     */
+    public function isAdmin(): bool
     {
-        return $this->role === 'user' && $this->approval_status === 'approved';
+        return $this->role === 'admin';
     }
 
     /**
-     * Get the attributes that should be cast.
+     * Kenali peran penyewa secara terpisah dari status persetujuan pendaftarannya.
+     */
+    public function isRenter(): bool
+    {
+        return $this->role === 'user';
+    }
+
+    /**
+     * Izinkan pemesanan baru hanya untuk penyewa yang sudah disetujui admin.
+     */
+    public function canRent(): bool
+    {
+        return $this->isRenter() && $this->approval_status === 'approved';
+    }
+
+    /**
+     * Hash kata sandi saat disimpan agar basis data hanya menyimpan hasil hash.
      *
      * @return array<string, string>
      */

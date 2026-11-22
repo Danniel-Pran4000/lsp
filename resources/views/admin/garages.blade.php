@@ -24,10 +24,10 @@
                             <span class="rounded-md bg-stone-100 px-2 py-1 text-xs font-semibold">{{ $garage->code }}</span>
                         </th>
                         <td class="px-4 py-4 text-stone-700">{{ $types[$garage->type] }}</td>
-                        <td class="px-4 py-4 text-right text-stone-700 tabular-nums">{{ \App\Support\Rupiah::format($garage->daily_rate) }}</td>
+                        <td class="px-4 py-4 text-right text-stone-700 tabular-nums">{{ \App\Support\Rupiah::formatAmount($garage->daily_rate) }}</td>
                         <td class="px-4 py-4 text-right text-stone-700 tabular-nums">
                             @if ($garage->kwh_rate !== null)
-                                {{ \App\Support\Rupiah::format($garage->kwh_rate) }}
+                                {{ \App\Support\Rupiah::formatAmount($garage->kwh_rate) }}
                             @else
                                 &mdash;
                             @endif

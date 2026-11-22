@@ -10,6 +10,9 @@ class PlanRentalRequest extends FormRequest
 {
     protected $redirectRoute = 'rentals.create';
 
+    /**
+     * Sesuaikan input wajib dengan jenis kendaraan, durasi, dan tahap pencarian atau pratinjau.
+     */
     public function rules(): array
     {
         if (! $this->isMethod('post')) {
@@ -40,6 +43,7 @@ class PlanRentalRequest extends FormRequest
         }
 
         if ($this->routeIs('rentals.available') && $this->expectsJson()) {
+            // Dropdown unit dapat diperbarui sebelum penyewa selesai mengisi detail kendaraan.
             unset($rules['brand'], $rules['vehicle_model'], $rules['plate'], $rules['battery_kwh'], $rules['remaining_percent']);
         }
 
@@ -50,9 +54,13 @@ class PlanRentalRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * Terapkan batas harian menurut panjang bulan tanggal mulai setelah tanggal dan durasi lolos validasi dasar.
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {
+            // Lewati perhitungan batas jika tanggal atau durasi sudah gagal validasi dasar.
             if (! $this->isMethod('post')
                 || $this->input('rental_type') !== 'daily'
                 || $validator->errors()->has('starts_on') || $validator->errors()->has('days')) {

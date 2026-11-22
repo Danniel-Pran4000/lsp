@@ -15,7 +15,10 @@ class RentalExtensionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_sees_only_rentals_active_today(): void
+    /**
+     * Bedakan daftar aktif hari ini dari daftar admin yang mencakup seluruh periode.
+     */
+    public function testAdminSeesOnlyRentalsActiveToday(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
         $admin = User::factory()->create(['role' => 'admin']);
@@ -34,7 +37,10 @@ class RentalExtensionTest extends TestCase
             ->assertSee(route('extensions.preview', $future));
     }
 
-    public function test_admin_can_extend_finished_and_upcoming_rentals(): void
+    /**
+     * Pastikan transaksi lampau dan mendatang dapat diperpanjang melalui alur admin.
+     */
+    public function testAdminCanExtendFinishedAndUpcomingRentals(): void
     {
         Storage::fake('local');
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
@@ -45,7 +51,7 @@ class RentalExtensionTest extends TestCase
         $this->actingAs($admin);
         foreach ([[$finished, '2026-11-22'], [$upcoming, '2026-11-28']] as [$rental, $newEnd]) {
             $quote = $this->get(route('extensions.preview', ['rental' => $rental, 'ends_on' => $newEnd]))
-                ->assertOk()->assertSee('IDR 80.000')->viewData('quoteId');
+                ->assertOk()->assertSee('Rp 80.000')->viewData('quoteId');
             $this->post(route('extensions.store', $rental), ['quote_id' => $quote, 'proof' => $this->proofImage()])
                 ->assertRedirect(route('admin.rentals'));
             $this->assertSame($newEnd, $rental->refresh()->ends_on);
@@ -55,7 +61,10 @@ class RentalExtensionTest extends TestCase
         $this->assertSame('available', $upcoming->garage->status);
     }
 
-    public function test_admin_extends_a_monthly_electric_rental_using_its_original_daily_rate(): void
+    /**
+     * Periksa tarif awal sewa bulanan, riwayat tambahan, dan akses foto untuk admin serta pemilik.
+     */
+    public function testAdminExtendsAMonthlyElectricRentalUsingItsOriginalDailyRate(): void
     {
         Storage::fake('local');
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
@@ -73,7 +82,7 @@ class RentalExtensionTest extends TestCase
 
         $url = route('extensions.preview', ['rental' => $rental, 'ends_on' => '2026-11-28']);
         $quote = $this->actingAs($admin)->get($url)
-            ->assertOk()->assertSee('Monthly')->assertSee('3 days')->assertSee('IDR 120.000')
+            ->assertOk()->assertSee('Bulanan')->assertSee('3 hari')->assertSee('Rp 120.000')
             ->viewData('quoteId');
 
         $this->post(route('extensions.store', $rental), ['quote_id' => $quote])
@@ -81,7 +90,7 @@ class RentalExtensionTest extends TestCase
         $this->post(route('extensions.store', $rental), [
             'quote_id' => $quote, 'proof' => $this->proofImage(), 'amount' => 1,
         ])->assertRedirect(route('admin.rentals'))
-            ->assertSessionHas('status', 'Rental for Merek uji Model uji extended. Unit E001.');
+            ->assertSessionHas('status', 'Sewa Merek uji Model uji berhasil diperpanjang. Unit E001.');
 
         $this->assertDatabaseHas('extensions', [
             'rental_id' => $rental->id, 'admin_id' => $admin->id, 'extended_on' => '2026-11-21',
@@ -91,10 +100,25 @@ class RentalExtensionTest extends TestCase
             'id' => $rental->id, 'ends_on' => '2026-11-28', 'rental_type' => 'monthly',
             'initial_total' => 1084000, 'proof_path' => 'initial.png',
         ]);
-        Storage::disk('local')->assertExists(Extension::sole()->proof_path);
+        $extension = Extension::sole();
+        Storage::disk('local')->assertExists($extension->proof_path);
+        Storage::disk('local')->put('initial.png', $this->proofImage()->get());
+        foreach ([$admin, $rental->user] as $viewer) {
+            $this->actingAs($viewer)->get(route('rentals.show', $rental))
+                ->assertOk()->assertViewIs('user.detail-rental')->assertSee('Rp 1.204.000');
+            $this->get(route('rentals.proof', $rental))->assertOk()->assertHeader('Content-Type', 'image/png');
+            $this->get(route('rentals.proof', [$rental, $extension]))->assertOk()->assertHeader('Content-Type', 'image/png');
+        }
+
+        $this->actingAs(User::factory()->create());
+        $this->get(route('rentals.proof', $rental))->assertNotFound();
+        $this->get(route('rentals.proof', [$rental, $extension]))->assertNotFound();
     }
 
-    public function test_new_end_must_be_later_and_cannot_overlap_another_rental(): void
+    /**
+     * Pastikan akhir baru melewati akhir lama dan tambahan periode bebas dari sewa lain.
+     */
+    public function testNewEndMustBeLaterAndCannotOverlapAnotherRental(): void
     {
         Storage::fake('local');
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
@@ -117,7 +141,10 @@ class RentalExtensionTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles('extension-proofs'));
     }
 
-    public function test_stale_confirmation_requires_another_preview(): void
+    /**
+     * Pastikan admin meninjau ulang tagihan jika transaksi berubah sesudah pratinjau.
+     */
+    public function testStaleConfirmationRequiresAnotherPreview(): void
     {
         Storage::fake('local');
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
@@ -130,13 +157,16 @@ class RentalExtensionTest extends TestCase
 
         $this->post(route('extensions.store', $rental), ['quote_id' => $quote, 'proof' => $this->proofImage()])
             ->assertRedirect($url)
-            ->assertSessionHasErrors(['ends_on' => 'The end date has changed. Recalculate the extension charge.']);
-        $this->get($url.'?ends_on=2026-11-28')->assertOk()->assertSee('IDR 80.000');
+            ->assertSessionHasErrors(['ends_on' => 'Tanggal selesai berubah. Hitung ulang biaya perpanjangan.']);
+        $this->get($url.'?ends_on=2026-11-28')->assertOk()->assertSee('Rp 80.000');
         $this->assertDatabaseCount('extensions', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('extension-proofs'));
     }
 
-    public function test_only_admin_can_access_extension_routes(): void
+    /**
+     * Periksa pembatasan peran pada halaman dan konfirmasi perpanjangan.
+     */
+    public function testOnlyAdminCanAccessExtensionRoutes(): void
     {
         $rental = $this->rental();
         $this->get(route('extensions.create'))->assertRedirect(route('login'));
@@ -147,6 +177,9 @@ class RentalExtensionTest extends TestCase
         $this->post(route('extensions.store', $rental))->assertForbidden();
     }
 
+    /**
+     * Buat transaksi awal dengan periode dan tarif terkontrol untuk skenario perpanjangan.
+     */
     private function rental(array $attributes = []): Rental
     {
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
@@ -167,6 +200,9 @@ class RentalExtensionTest extends TestCase
         return $rental;
     }
 
+    /**
+     * Sediakan gambar PNG valid sebagai bukti pembayaran tambahan.
+     */
     private function proofImage(): UploadedFile
     {
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aK0sAAAAASUVORK5CYII=');

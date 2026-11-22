@@ -10,19 +10,28 @@ use Illuminate\View\View;
 
 class RegistrationController extends Controller
 {
-    public function create(): View
+    /**
+     * Tampilkan formulir pendaftaran akun penyewa.
+     */
+    public function showForm(): View
     {
         return view('auth.register');
     }
 
-    public function register(RegisterUserRequest $request): RedirectResponse
+    /**
+     * Simpan pendaftar menggunakan status awal pending agar admin dapat memeriksa identitasnya.
+     */
+    public function registerRenter(RegisterUserRequest $request): RedirectResponse
     {
         User::create($request->validated());
 
         return to_route('login')->with('status', 'Pendaftaran berhasil. Akun Anda menunggu persetujuan admin.');
     }
 
-    public function index(): View
+    /**
+     * Tampilkan semua penyewa sehingga admin dapat meninjau kembali keputusan sebelumnya.
+     */
+    public function listRenters(): View
     {
         $users = User::where('role', 'user')
             ->orderBy('id')
@@ -31,9 +40,12 @@ class RegistrationController extends Controller
         return view('admin.users', compact('users'));
     }
 
-    public function verify(Request $request, User $user): RedirectResponse
+    /**
+     * Simpan keputusan persetujuan pada akun yang sama agar riwayat sewanya tetap dapat ditelusuri.
+     */
+    public function reviewRenter(Request $request, User $user): RedirectResponse
     {
-        abort_unless($user->role === 'user', 404);
+        abort_unless($user->isRenter(), 404);
 
         ['decision' => $decision] = $request->validate(['decision' => ['required', 'in:approved,rejected']]);
 

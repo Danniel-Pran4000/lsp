@@ -15,7 +15,10 @@ use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    public function index(ReportRequest $request): View
+    /**
+     * Susun ringkasan dan rincian menurut periode, tipe garasi, atau penyewa dengan memisahkan pembayaran awal dan tambahan.
+     */
+    public function showReport(ReportRequest $request): View
     {
         $filters = $request->validated();
         $today = CarbonImmutable::today();
@@ -78,8 +81,10 @@ class ReportController extends Controller
                 break;
         }
 
-        $rentalTotals = $this->totalsByGroup($rentals, $rentalGroup, 'rentals.initial_total');
-        $extensionTotals = $this->totalsByGroup($extensions, $extensionGroup, 'extensions.amount');
+        // Hitung pembayaran awal dan perpanjangan secara terpisah. Jika satu sewa
+        // diperpanjang dua kali, pembayaran awal tetap masuk laporan satu kali.
+        $rentalTotals = $this->groupTotals($rentals, $rentalGroup, 'rentals.initial_total');
+        $extensionTotals = $this->groupTotals($extensions, $extensionGroup, 'extensions.amount');
         $lastSummaryPage = max(1, (int) ceil(count($groups) / 15));
         $summaryPage = min(LengthAwarePaginator::resolveCurrentPage('summary_page'), $lastSummaryPage);
         $groups = (new LengthAwarePaginator(
@@ -103,7 +108,10 @@ class ReportController extends Controller
         ));
     }
 
-    private function totalsByGroup(Builder $query, string $group, string $amount): Collection
+    /**
+     * Hitung jumlah transaksi dan nominal per kelompok pada salinan query agar query rincian tetap dapat digunakan.
+     */
+    private function groupTotals(Builder $query, string $group, string $amount): Collection
     {
         // Ekspresi pengelompokan dan kolom nominal ditentukan di controller.
         return (clone $query)->toBase()

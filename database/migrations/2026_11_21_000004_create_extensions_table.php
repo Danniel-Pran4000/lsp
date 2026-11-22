@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Catat setiap perpanjangan secara terpisah agar bukti, biaya, dan admin pemroses tetap terlacak.
+     */
     public function up(): void
     {
         Schema::create('extensions', function (Blueprint $table) {
@@ -21,6 +24,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Hapus tabel riwayat perpanjangan saat migrasi dibatalkan.
+     */
     public function down(): void
     {
         Schema::dropIfExists('extensions');

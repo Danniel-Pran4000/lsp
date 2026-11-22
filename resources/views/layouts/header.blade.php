@@ -14,7 +14,7 @@
                 <div class="flex min-w-0 items-center gap-4 sm:gap-6">
                     <div class="min-w-0 text-right text-xs">
                         <p class="truncate font-semibold">{{ auth()->user()->name }}</p>
-                        <p class="mt-0.5 text-stone-600">{{ auth()->user()->role === 'admin' ? 'Admin' : 'Penyewa' }}</p>
+                        <p class="mt-0.5 text-stone-600">{{ auth()->user()->isAdmin() ? 'Admin' : 'Penyewa' }}</p>
                     </div>
                     <form action="{{ route('logout') }}" method="post">
                         @csrf
@@ -30,7 +30,7 @@
             $inactiveTab = 'whitespace-nowrap border-b-2 border-transparent px-2 py-2 text-sm font-medium text-stone-600 hover:text-red-800';
         @endphp
         <nav class="mx-auto mt-5 flex max-w-7xl gap-5 overflow-x-auto bg-transparent px-5 sm:gap-8 sm:px-8" aria-label="Navigasi utama">
-            @if (auth()->user()->role === 'admin')
+            @if (auth()->user()->isAdmin())
                 <a class="{{ request()->routeIs('registration.index') ? $activeTab : $inactiveTab }}" href="{{ route('registration.index') }}">Pengguna</a>
                 <a class="{{ request()->routeIs('admin.rentals', 'extensions.*') ? $activeTab : $inactiveTab }}" href="{{ route('admin.rentals') }}">Sewa</a>
                 <a class="{{ request()->routeIs('garages.*') ? $activeTab : $inactiveTab }}" href="{{ route('garages.index') }}" @if(request()->routeIs('garages.index')) aria-current="page" @endif>Garasi</a>

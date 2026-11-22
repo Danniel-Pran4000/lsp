@@ -14,6 +14,9 @@ use Illuminate\View\View;
 
 class ExtensionController extends Controller
 {
+    /**
+     * Tampilkan sewa yang masih aktif pada hari ini untuk daftar perpanjangan aktif.
+     */
     public function activeRentals(): View
     {
         $today = CarbonImmutable::today()->toDateString();
@@ -26,7 +29,10 @@ class ExtensionController extends Controller
         return view('admin.active-rentals', compact('rentals'));
     }
 
-    public function preview(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): View|RedirectResponse
+    /**
+     * Tampilkan formulir dan siapkan tagihan tambahan saat admin memilih tanggal akhir baru.
+     */
+    public function previewExtension(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): View|RedirectResponse
     {
         $rental->load(['garage', 'user']);
         $earliestEnd = CarbonImmutable::parse($rental->ends_on)->addDay()->toDateString();
@@ -56,7 +62,10 @@ class ExtensionController extends Controller
         return view('admin.rental-extend', compact('rental', 'earliestEnd', 'newEnd', 'charge', 'quoteId'));
     }
 
-    public function store(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): RedirectResponse
+    /**
+     * Cocokkan konfirmasi dengan pratinjau admin sebelum mencatat perpanjangan beserta bukti bayar.
+     */
+    public function saveExtension(ExtensionRequest $request, Rental $rental, RentalService $rentals, RentalCalculator $calculator): RedirectResponse
     {
         $quote = $request->session()->get('extension_quote');
         if (($quote['admin_id'] ?? null) !== $request->user()->id
@@ -67,7 +76,7 @@ class ExtensionController extends Controller
         }
 
         try {
-            $rentals->extend($request->user(), $rental, $quote, $request->file('proof'), $calculator);
+            $rentals->extendRental($request->user(), $rental, $quote, $request->file('proof'), $calculator);
         } catch (ValidationException $exception) {
             return to_route('extensions.preview', $rental)
                 ->withErrors($exception->errors())->withInput(['ends_on' => $quote['new_end']]);

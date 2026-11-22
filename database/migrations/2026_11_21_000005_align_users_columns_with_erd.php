@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Lepaskan kolom bawaan autentikasi yang tidak digunakan dalam skema akun GarageRental.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
@@ -13,6 +16,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Kembalikan kolom bawaan Laravel untuk memulihkan struktur sebelum penyesuaian ERD.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {

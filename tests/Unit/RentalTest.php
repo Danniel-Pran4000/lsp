@@ -9,14 +9,20 @@ use PHPUnit\Framework\TestCase;
 
 class RentalTest extends TestCase
 {
+    /**
+     * Pastikan kedua batas periode termasuk hari aktif sewa.
+     */
     #[DataProvider('datesAroundRental')]
-    public function test_the_rental_is_active_on_both_period_boundaries(string $date, bool $expected): void
+    public function testTheRentalIsActiveOnBothPeriodBoundaries(string $date, bool $expected): void
     {
         $rental = (new Rental)->forceFill(['starts_on' => '2026-11-21', 'ends_on' => '2026-11-23']);
 
-        $this->assertSame($expected, $rental->isActiveOn(CarbonImmutable::parse($date)));
+        $this->assertSame($expected, $rental->coversDate(CarbonImmutable::parse($date)));
     }
 
+    /**
+     * Sediakan tanggal di dalam dan di luar periode untuk memeriksa status aktif.
+     */
     public static function datesAroundRental(): array
     {
         return [

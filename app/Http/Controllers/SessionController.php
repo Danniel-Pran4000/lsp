@@ -9,12 +9,18 @@ use Illuminate\View\View;
 
 class SessionController extends Controller
 {
-    public function create(): View
+    /**
+     * Tampilkan formulir masuk untuk admin dan penyewa.
+     */
+    public function showLogin(): View
     {
         return view('auth.login');
     }
 
-    public function store(Request $request): RedirectResponse
+    /**
+     * Periksa kredensial dan perbarui ID sesi setelah login berhasil.
+     */
+    public function startSession(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -27,19 +33,23 @@ class SessionController extends Controller
 
         $request->session()->regenerate();
 
-        return $request->user()->role === 'admin'
-            ? to_route('registration.index')
-            : to_route('rentals.index');
+        return $this->redirectAccount($request);
     }
 
-    public function show(Request $request): RedirectResponse
+    /**
+     * Arahkan pengguna ke daftar penyewa atau riwayat sewanya sesuai peran akun.
+     */
+    public function redirectAccount(Request $request): RedirectResponse
     {
-        return $request->user()->role === 'admin'
+        return $request->user()->isAdmin()
             ? to_route('registration.index')
             : to_route('rentals.index');
     }
 
-    public function destroy(Request $request): RedirectResponse
+    /**
+     * Akhiri autentikasi dan batalkan sesi agar sesi lama tidak dapat digunakan kembali.
+     */
+    public function endSession(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();

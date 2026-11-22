@@ -11,16 +11,16 @@
         </div>
         <div class="flex flex-wrap justify-between gap-2 py-3">
             <dt class="text-stone-600">Tarif harian</dt>
-            <dd class="tabular-nums">{{ \App\Support\Rupiah::format($charge['daily_rate']) }}</dd>
+            <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['daily_rate']) }}</dd>
         </div>
         <div class="flex flex-wrap justify-between gap-2 py-3">
             <dt class="text-stone-600">Biaya sewa</dt>
-            <dd class="tabular-nums">{{ \App\Support\Rupiah::format($charge['rental_amount']) }}</dd>
+            <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['rental_amount']) }}</dd>
         </div>
         @if ($charge['kwh_rate'] !== null)
             <div class="flex flex-wrap justify-between gap-2 py-3">
                 <dt class="text-stone-600">Tarif per kWh</dt>
-                <dd class="tabular-nums">{{ \App\Support\Rupiah::format($charge['kwh_rate']) }}</dd>
+                <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['kwh_rate']) }}</dd>
             </div>
             <div class="flex flex-wrap justify-between gap-2 py-3">
                 <dt class="text-stone-600">Estimasi energi pengisian</dt>
@@ -28,12 +28,12 @@
             </div>
             <div class="flex flex-wrap justify-between gap-2 py-3">
                 <dt class="text-stone-600">Estimasi biaya listrik</dt>
-                <dd class="tabular-nums">{{ \App\Support\Rupiah::format($charge['electricity_amount']) }}</dd>
+                <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['electricity_amount']) }}</dd>
             </div>
         @endif
         <div class="flex flex-wrap justify-between gap-2 py-3 font-semibold text-red-800">
             <dt>Total pembayaran</dt>
-            <dd class="tabular-nums">{{ \App\Support\Rupiah::format($charge['initial_total']) }}</dd>
+            <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['initial_total']) }}</dd>
         </div>
     </dl>
 </section>

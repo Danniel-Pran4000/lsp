@@ -11,6 +11,12 @@ use Illuminate\Validation\ValidationException;
 
 class RentalCalculator
 {
+    private const BILLABLE_DAYS_PER_MONTH = 25;
+
+    /**
+     * Tentukan hari terakhir unit ditempati. Hari mulai sudah termasuk masa sewa,
+     * sehingga sewa satu hari berakhir pada tanggal yang sama.
+     */
     public function endDate(CarbonImmutable $start, int $months, int $days): CarbonImmutable
     {
         $nextStart = $start;
@@ -26,6 +32,11 @@ class RentalCalculator
         return $nextStart->addMonthsNoOverflow($months)->addDays($days)->subDay();
     }
 
+    /**
+     * Satu bulan mengikuti kalender untuk masa pakai, tetapi biayanya setara 25 hari.
+     * Untuk garasi listrik, tagihkan energi yang diperlukan sampai baterai penuh.
+     * Bulatkan total setelah biaya sewa dan listrik dijumlahkan agar pecahan rupiah tetap terhitung.
+     */
     public function initialCharge(Garage $garage, array $details): array
     {
         if ($details['vehicle_category'] === 'electric_car' && ! isset($details['remaining_percent'])) {
@@ -33,7 +44,7 @@ class RentalCalculator
         }
 
         $dailyRate = BigDecimal::of((string) $garage->daily_rate)->toScale(2);
-        $billableDays = (int) ($details['months'] ?? 0) * 25 + (int) $details['days'];
+        $billableDays = (int) ($details['months'] ?? 0) * self::BILLABLE_DAYS_PER_MONTH + (int) $details['days'];
         $rentalAmount = $dailyRate->multipliedBy($billableDays);
         $kwhRate = null;
         $energy = BigDecimal::zero();
@@ -67,6 +78,10 @@ class RentalCalculator
         ];
     }
 
+    /**
+     * Hari terakhir sewa lama sudah dibayar. Memindahkan akhir sewa dari 2 ke 3 November
+     * menambah satu hari dengan tarif harian yang tersimpan pada transaksi awal.
+     */
     public function extensionCharge(Rental $rental, CarbonImmutable $newEnd): array
     {
         $oldEnd = CarbonImmutable::parse($rental->ends_on);

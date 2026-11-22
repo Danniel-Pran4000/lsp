@@ -12,14 +12,20 @@ use Tests\TestCase;
 
 class RentalCalculatorTest extends TestCase
 {
+    /**
+     * Uji hari terakhir masa pakai untuk kombinasi tanggal mulai, bulan, dan hari.
+     */
     #[DataProvider('rentalPeriods')]
-    public function test_it_calculates_an_inclusive_end_date(string $start, int $months, int $days, string $end): void
+    public function testItCalculatesAnInclusiveEndDate(string $start, int $months, int $days, string $end): void
     {
         $actual = (new RentalCalculator)->endDate(CarbonImmutable::parse($start), $months, $days);
 
         $this->assertSame($end, $actual->toDateString());
     }
 
+    /**
+     * Sediakan variasi periode kalender agar batas bulan pendek ikut diperiksa.
+     */
     public static function rentalPeriods(): array
     {
         return [
@@ -32,8 +38,11 @@ class RentalCalculatorTest extends TestCase
         ];
     }
 
+    /**
+     * Pastikan komponen hari dan bulan menghasilkan tagihan sesuai tarif harian unit.
+     */
     #[DataProvider('bicycleCharges')]
-    public function test_it_prices_days_and_months_at_the_daily_rate(int $months, int $days, string $total): void
+    public function testItPricesDaysAndMonthsAtTheDailyRate(int $months, int $days, string $total): void
     {
         $garage = new Garage(['type' => 'S', 'daily_rate' => '50000.00']);
         $charge = (new RentalCalculator)->initialCharge($garage, [
@@ -45,6 +54,9 @@ class RentalCalculatorTest extends TestCase
         $this->assertSame($total, $charge['initial_total']);
     }
 
+    /**
+     * Sediakan durasi dan total acuan untuk sewa tanpa biaya listrik.
+     */
     public static function bicycleCharges(): array
     {
         return [
@@ -54,8 +66,11 @@ class RentalCalculatorTest extends TestCase
         ];
     }
 
+    /**
+     * Periksa kebutuhan energi dan biaya dari persentase baterai yang tersisa.
+     */
     #[DataProvider('electricCharges')]
-    public function test_it_charges_for_the_missing_battery_capacity(
+    public function testItChargesForTheMissingBatteryCapacity(
         string $garageType,
         ?string $kwhRate,
         string $remainingPercent,
@@ -78,6 +93,9 @@ class RentalCalculatorTest extends TestCase
         $this->assertSame($total, $charge['initial_total']);
     }
 
+    /**
+     * Sediakan variasi unit dan kondisi baterai untuk membandingkan biaya pengisian.
+     */
     public static function electricCharges(): array
     {
         return [
@@ -88,7 +106,10 @@ class RentalCalculatorTest extends TestCase
         ];
     }
 
-    public function test_it_rounds_the_combined_total_once(): void
+    /**
+     * Pastikan pecahan biaya digabung sebelum total dibulatkan ke rupiah.
+     */
+    public function testItRoundsTheCombinedTotalOnce(): void
     {
         $garage = new Garage(['type' => 'E', 'daily_rate' => '100.25', 'kwh_rate' => '0.50']);
         $charge = (new RentalCalculator)->initialCharge($garage, [
@@ -103,8 +124,11 @@ class RentalCalculatorTest extends TestCase
         $this->assertSame('101', $charge['initial_total']);
     }
 
+    /**
+     * Periksa bahwa input pengisian yang kurang menghasilkan kesalahan pada kolom terkait.
+     */
     #[DataProvider('incompleteCharges')]
-    public function test_it_rejects_missing_charge_inputs(?string $kwhRate, array $details, string $errorField): void
+    public function testItRejectsMissingChargeInputs(?string $kwhRate, array $details, string $errorField): void
     {
         $garage = new Garage(['type' => 'E', 'daily_rate' => '75000.00', 'kwh_rate' => $kwhRate]);
 
@@ -121,6 +145,9 @@ class RentalCalculatorTest extends TestCase
         }
     }
 
+    /**
+     * Sediakan kombinasi data baterai atau tarif yang tidak cukup untuk menghitung tagihan.
+     */
     public static function incompleteCharges(): array
     {
         return [
@@ -129,7 +156,10 @@ class RentalCalculatorTest extends TestCase
         ];
     }
 
-    public function test_successive_extensions_charge_only_the_added_days(): void
+    /**
+     * Periksa agar dua perpanjangan berurutan hanya menagih hari yang baru ditambahkan.
+     */
+    public function testSuccessiveExtensionsChargeOnlyTheAddedDays(): void
     {
         $calculator = new RentalCalculator;
         $rental = (new Rental)->forceFill([
@@ -146,8 +176,11 @@ class RentalCalculatorTest extends TestCase
         $this->assertSame(['days' => 2, 'amount' => '150000'], $calculator->extensionCharge($rental, $secondEnd));
     }
 
+    /**
+     * Pastikan tanggal yang sama atau lebih awal tidak menghasilkan tagihan perpanjangan.
+     */
     #[DataProvider('invalidExtensionDates')]
-    public function test_it_rejects_an_end_date_that_does_not_extend_the_rental(string $newEnd): void
+    public function testItRejectsAnEndDateThatDoesNotExtendTheRental(string $newEnd): void
     {
         $rental = (new Rental)->forceFill(['ends_on' => '2026-11-03', 'daily_rate' => '75000.00']);
 
@@ -159,6 +192,9 @@ class RentalCalculatorTest extends TestCase
         }
     }
 
+    /**
+     * Sediakan tanggal akhir yang tidak menambah masa sewa.
+     */
     public static function invalidExtensionDates(): array
     {
         return [
@@ -167,7 +203,10 @@ class RentalCalculatorTest extends TestCase
         ];
     }
 
-    public function test_it_uses_the_saved_daily_rate_to_extend_a_monthly_rental(): void
+    /**
+     * Pastikan perpanjangan sewa bulanan memakai tarif harian yang tersimpan saat pemesanan.
+     */
+    public function testItUsesTheSavedDailyRateToExtendAMonthlyRental(): void
     {
         $rental = (new Rental)->forceFill([
             'rental_type' => 'monthly',

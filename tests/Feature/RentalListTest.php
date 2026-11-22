@@ -13,7 +13,10 @@ class RentalListTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_list_and_active_count_only_include_the_signed_in_renters_records_across_pages(): void
+    /**
+     * Pastikan daftar, jumlah aktif, dan paginasi hanya mencakup sewa akun yang masuk.
+     */
+    public function testTheListAndActiveCountOnlyIncludeTheSignedInRentersRecordsAcrossPages(): void
     {
         $this->freezeTime();
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
@@ -33,14 +36,17 @@ class RentalListTest extends TestCase
 
         $this->actingAs($renter)->get(route('account.show'))->assertRedirect(route('rentals.index'));
         $this->get(route('rentals.index', ['user_id' => $otherRenter->id]))
-            ->assertOk()->assertViewHas('activeCount', 1)->assertSee('New rental')->assertSee('IDR 50.000')
+            ->assertOk()->assertViewHas('activeCount', 1)->assertSee('Sewa baru')->assertSee('Rp 50.000')
             ->assertSee('S001')->assertDontSee('S002')->assertDontSee('S003');
         $this->get(route('rentals.index', ['page' => 2]))
             ->assertOk()->assertViewHas('activeCount', 1)
-            ->assertSee('S002')->assertDontSee('S003')->assertSee(today()->subDay()->format('d M Y'));
+            ->assertSee('S002')->assertDontSee('S003')->assertSee(today()->subDay()->locale('id')->translatedFormat('d M Y'));
     }
 
-    public function test_history_requires_a_renter_account_and_remains_available_after_rejection(): void
+    /**
+     * Pastikan perubahan status membatasi pemesanan baru sambil mempertahankan akses riwayat.
+     */
+    public function testHistoryRequiresARenterAccountAndRemainsAvailableAfterRejection(): void
     {
         $this->get(route('rentals.index'))->assertRedirect(route('login'));
         $admin = User::factory()->create(['role' => 'admin']);
@@ -48,18 +54,21 @@ class RentalListTest extends TestCase
 
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'pending']);
         $this->actingAs($renter)->get(route('rentals.index'))
-            ->assertOk()->assertViewHas('activeCount', 0)->assertSee('No rentals found')
-            ->assertDontSee('New rental')->assertDontSee('Account status');
+            ->assertOk()->assertViewHas('activeCount', 0)->assertSee('Belum ada sewa.')
+            ->assertDontSee('Sewa baru')->assertSee('Pending');
 
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 50000]);
         $this->rental($renter, $garage, '2026-11-21', '2026-11-24');
         $renter->forceFill(['approval_status' => 'rejected'])->save();
 
-        $this->get(route('rentals.index'))->assertOk()->assertSee('S001')->assertSee('24 Nov 2026');
+        $this->get(route('rentals.index'))->assertOk()->assertSee('S001')->assertSee('24 Nov 2026')->assertSee('Rejected');
         $this->get(route('rentals.create'))->assertForbidden();
     }
 
-    public function test_the_displayed_price_includes_every_extension_once(): void
+    /**
+     * Periksa total agar setiap pembayaran tambahan dihitung tepat sekali.
+     */
+    public function testTheDisplayedPriceIncludesEveryExtensionOnce(): void
     {
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $admin = User::factory()->create(['role' => 'admin']);
@@ -82,10 +91,13 @@ class RentalListTest extends TestCase
         }
 
         $this->actingAs($renter)->get(route('rentals.index'))
-            ->assertOk()->assertSee('Total price')->assertSee('IDR 300.000')
-            ->assertDontSee('IDR 50.000')->assertSee('26 Nov 2026');
+            ->assertOk()->assertSee('Total pembayaran')->assertSee('Rp 300.000')
+            ->assertDontSee('Rp 50.000')->assertSee('26 Nov 2026');
     }
 
+    /**
+     * Buat transaksi milik penyewa tertentu agar kepemilikan dan periode dapat diuji.
+     */
     private function rental(User $user, Garage $garage, string $start, string $end): Rental
     {
         return Rental::forceCreate([

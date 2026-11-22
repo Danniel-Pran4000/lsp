@@ -28,7 +28,7 @@
                 </div>
                 <div class="flex flex-wrap justify-between gap-2 py-3">
                     <dt class="text-stone-600">Tarif harian awal</dt>
-                    <dd class="tabular-nums">{{ \App\Support\Rupiah::format($rental->daily_rate) }}</dd>
+                    <dd class="tabular-nums">{{ \App\Support\Rupiah::formatAmount($rental->daily_rate) }}</dd>
                 </div>
             </dl>
         </section>
@@ -55,7 +55,7 @@
             <div>
                 <h2 class="text-lg font-semibold">Pembayaran perpanjangan</h2>
                 <p class="mt-2 text-sm text-stone-600">{{ $charge['days'] }} hari · Tanggal selesai baru {{ $newEnd }}</p>
-                <p class="mt-2 text-2xl font-semibold text-red-800 tabular-nums">{{ \App\Support\Rupiah::format($charge['amount']) }}</p>
+                <p class="mt-2 text-2xl font-semibold text-red-800 tabular-nums">{{ \App\Support\Rupiah::formatAmount($charge['amount']) }}</p>
             </div>
             @include('layouts.payment-proof', ['id' => 'extension-proof'])
         </form>

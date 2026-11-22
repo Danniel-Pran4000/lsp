@@ -9,6 +9,9 @@ class StoreGarageBatchRequest extends FormRequest
 {
     protected $redirectRoute = 'garages.create';
 
+    /**
+     * Periksa jumlah unit dan tarif per tipe, termasuk tarif listrik khusus garasi listrik.
+     */
     public function rules(): array
     {
         $garageType = ['required', 'in:S,C,E'];
@@ -22,6 +25,9 @@ class StoreGarageBatchRequest extends FormRequest
         ];
     }
 
+    /**
+     * Gunakan nama kolom dalam bahasa Indonesia agar pesan kesalahan mudah dipahami admin.
+     */
     public function attributes(): array
     {
         return [

@@ -10,68 +10,60 @@ class RentalPlanTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_selecting_rental_type_updates_the_duration_fields_without_calculating(): void
+    /**
+     * Periksa pilihan durasi dan pemulihan isian saat formulir sewa ditampilkan kembali.
+     */
+    public function testSingleFormOffersBothDurationTypesAndPreservesEnteredValues(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
-
-        $this->actingAs($user)->followingRedirects()->post(route('rentals.create'), [
-            'rental_type' => 'daily',
-            'rental_type_selection' => 'monthly',
-            'brand' => 'Sample brand',
-            'days' => 3,
-        ])->assertOk()->assertViewHas('isMonthly', true)->assertSee('Extra days')
-            ->assertSee('value="Sample brand"', false)->assertDontSee('Find available units')
-            ->assertDontSee('step="1" value="3"', false);
-
-        $this->followingRedirects()->post(route('rentals.create'), [
-            'rental_type' => 'monthly',
-            'rental_type_selection' => 'daily',
-        ])->assertOk()->assertViewHas('isMonthly', false)->assertDontSee('Extra days');
+        $this->actingAs($user)->withSession(['_old_input' => ['rental_type' => 'monthly', 'brand' => 'Sample brand']])
+            ->get(route('rentals.create'))->assertOk()
+            ->assertSee('value="monthly" selected', false)->assertSee('value="daily"', false)
+            ->assertSee('name="months"', false)->assertSee('name="days"', false)
+            ->assertSee('value="Sample brand"', false);
     }
 
-    public function test_applying_a_vehicle_category_controls_the_fields_without_calculating(): void
+    /**
+     * Pastikan pilihan garasi pada formulir sesuai dengan setiap kategori kendaraan.
+     */
+    public function testFormSuppliesCompatibleGarageTypesForEachVehicleCategory(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
-        $this->actingAs($user)->get(route('rentals.create'))
-            ->assertViewHas('needsPlate', false)->assertViewHas('needsBattery', false);
-
-        foreach ([
-            'motorcycle' => false,
-            'gas_car' => false,
-            'electric_car' => true,
-            'bicycle' => false,
-        ] as $category => $needsBattery) {
-            $this->followingRedirects()->post(route('rentals.create'), [
-                'vehicle_selection' => $category,
-                'brand' => 'Sample brand',
-            ])->assertOk()->assertViewHas('needsPlate', $category !== 'bicycle')->assertViewHas('needsBattery', $needsBattery)
-                ->assertSee('value="Sample brand"', false)->assertDontSee('Find available units');
-        }
+        $this->actingAs($user)->get(route('rentals.create'))->assertOk()
+            ->assertViewHas('compatibleGarages', [
+                'bicycle' => ['S'], 'motorcycle' => ['S'], 'gas_car' => ['C'], 'electric_car' => ['C', 'E'],
+            ])->assertSee('data-plate', false)->assertSee('data-battery', false);
     }
 
-    public function test_future_start_uses_its_own_month_for_the_daily_limit(): void
+    /**
+     * Periksa batas harian berdasarkan bulan mulai saat pemesanan dibuat untuk bulan mendatang.
+     */
+    public function testFutureStartUsesItsOwnMonthForTheDailyLimit(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $payload = [
-            'vehicle_category' => 'bicycle', 'brand' => 'Merek uji', 'vehicle_model' => 'Model uji',
+            'garage_type' => 'S', 'vehicle_category' => 'bicycle', 'brand' => 'Merek uji', 'vehicle_model' => 'Model uji',
             'rental_type' => 'daily', 'starts_on' => '2026-12-01', 'days' => 30,
         ];
 
-        $this->actingAs($user)->post(route('rentals.create'), $payload)
+        $this->actingAs($user)->post(route('rentals.available'), $payload)
             ->assertOk()->assertSee('30/12/2026');
-        $this->post(route('rentals.create'), array_replace($payload, ['starts_on' => '2026-11-28']))
+        $this->post(route('rentals.available'), array_replace($payload, ['starts_on' => '2026-11-28']))
             ->assertSessionHasErrors('days');
-        $this->post(route('rentals.create'), array_replace($payload, ['starts_on' => '2026-11-20', 'days' => 1]))
+        $this->post(route('rentals.available'), array_replace($payload, ['starts_on' => '2026-11-20', 'days' => 1]))
             ->assertSessionHasErrors('starts_on');
     }
 
-    public function test_daily_limit_uses_the_start_month_and_end_date_is_inclusive(): void
+    /**
+     * Uji durasi maksimum dan tanggal akhir inklusif pada bulan mulai yang dipilih.
+     */
+    public function testDailyLimitUsesTheStartMonthAndEndDateIsInclusive(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $payload = [
-            'vehicle_category' => 'bicycle',
+            'garage_type' => 'S', 'vehicle_category' => 'bicycle',
             'brand' => 'Merek uji',
             'vehicle_model' => 'Model uji',
             'rental_type' => 'daily',
@@ -80,21 +72,24 @@ class RentalPlanTest extends TestCase
 
         $this->actingAs($user)->get(route('rentals.create'))
             ->assertOk()->assertSee('value="2026-11-21"', false)
-            ->assertDontSee('Find available units');
-        $this->post(route('rentals.create'), $payload)
+            ->assertSee('Pilih unit');
+        $this->post(route('rentals.available'), $payload)
             ->assertOk()->assertSee('19/12/2026')->assertViewHas('garageTypes', ['S']);
-        $this->post(route('rentals.create'), array_replace($payload, ['days' => 30]))
+        $this->post(route('rentals.available'), array_replace($payload, ['days' => 30]))
             ->assertRedirect(route('rentals.create'))->assertSessionHasErrors('days');
 
         $this->assertDatabaseCount('rentals', 0);
     }
 
-    public function test_monthly_rentals_cross_short_months_and_accept_extra_days(): void
+    /**
+     * Periksa sewa bulanan yang melewati Februari dan memiliki tambahan hari.
+     */
+    public function testMonthlyRentalsCrossShortMonthsAndAcceptExtraDays(): void
     {
         $this->travelTo(now()->setDate(2028, 1, 31)->startOfDay());
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
         $payload = [
-            'vehicle_category' => 'electric_car',
+            'garage_type' => 'E', 'vehicle_category' => 'electric_car',
             'brand' => 'Merek uji',
             'vehicle_model' => 'Model uji',
             'plate' => 'B 1234 ABC',
@@ -104,21 +99,24 @@ class RentalPlanTest extends TestCase
             'months' => 1,
         ];
 
-        $this->actingAs($user)->post(route('rentals.create'), $payload)
+        $this->actingAs($user)->post(route('rentals.available'), $payload)
             ->assertOk()->assertSee('29/02/2028')->assertViewHas('garageTypes', ['C', 'E'])
             ->assertViewHas('details.days', 0);
-        $this->post(route('rentals.create'), [...$payload, 'days' => ''])
+        $this->post(route('rentals.available'), [...$payload, 'days' => ''])
             ->assertOk()->assertSee('29/02/2028')->assertViewHas('details.days', 0);
-        $this->post(route('rentals.create'), array_replace($payload, ['months' => 2, 'days' => 3]))
+        $this->post(route('rentals.available'), array_replace($payload, ['months' => 2, 'days' => 3]))
             ->assertOk()->assertSee('03/04/2028');
     }
 
-    public function test_plate_and_battery_values_are_required_for_an_electric_car(): void
+    /**
+     * Pastikan pratinjau mobil listrik menolak data plat dan baterai yang belum lengkap.
+     */
+    public function testPlateAndBatteryValuesAreRequiredForAnElectricCar(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
 
-        $this->actingAs($user)->post(route('rentals.create'), [
-            'vehicle_category' => 'electric_car',
+        $this->actingAs($user)->post(route('rentals.preview'), [
+            'garage_id' => 1, 'garage_type' => 'E', 'vehicle_category' => 'electric_car',
             'brand' => 'Merek uji',
             'vehicle_model' => 'Model uji',
             'rental_type' => 'daily',
@@ -126,7 +124,10 @@ class RentalPlanTest extends TestCase
         ])->assertSessionHasErrors(['plate', 'battery_kwh', 'remaining_percent']);
     }
 
-    public function test_only_approved_renters_can_open_or_submit_the_form(): void
+    /**
+     * Periksa bahwa hanya penyewa yang disetujui dapat membuka dan mengirim rencana sewa.
+     */
+    public function testOnlyApprovedRentersCanOpenOrSubmitTheForm(): void
     {
         $this->get(route('rentals.create'))->assertRedirect(route('login'));
 
@@ -137,7 +138,7 @@ class RentalPlanTest extends TestCase
         ] as $attributes) {
             $this->actingAs(User::factory()->create($attributes));
             $this->get(route('rentals.create'))->assertForbidden();
-            $this->post(route('rentals.create'))->assertForbidden();
+            $this->post(route('rentals.available'))->assertForbidden();
         }
     }
 }

@@ -18,13 +18,21 @@ use Throwable;
 
 class RentalService
 {
-    public function availableToday(CarbonImmutable $today): Builder
+    /**
+     * Cari unit tanpa sewa aktif pada tanggal acuan agar daftar admin mengikuti jadwal terkini.
+     */
+    public function vacantUnits(CarbonImmutable $today): Builder
     {
         return Garage::query()->whereNotIn('id', $this->overlappingRentals($today, $today)->select('garage_id'));
     }
 
-    /** @return Collection<int, Garage> */
-    public function availableUnits(string $type, CarbonImmutable $start, CarbonImmutable $end): Collection
+    /**
+     * Tawarkan unit yang kosong hari ini sekaligus bebas sepanjang periode pilihan.
+     * Jadwal sewa menjadi acuan karena status unit yang tersimpan bisa tertinggal saat hari berganti.
+     *
+     * @return Collection<int, Garage>
+     */
+    public function findUnits(string $type, CarbonImmutable $start, CarbonImmutable $end): Collection
     {
         $today = CarbonImmutable::today();
         $garages = Garage::query()->where('type', $type);
@@ -40,14 +48,18 @@ class RentalService
 
         $occupied = $this->overlappingRentals($start, $end)->select('garage_id');
 
-        return $this->availableToday($today)->where('type', $type)
+        return $this->vacantUnits($today)->where('type', $type)
             ->whereNotIn('id', $occupied)
             ->orderBy('code')->get();
     }
 
-    public function book(User $user, array $quote, UploadedFile $proof, RentalCalculator $calculator): Rental
+    /**
+     * Pratinjau belum mencadangkan unit. Saat konfirmasi, kunci unit untuk mencegah dua
+     * pemesanan dengan periode yang bertabrakan, lalu periksa ulang jadwal, tarif, dan persetujuan.
+     */
+    public function bookRental(User $user, array $quote, UploadedFile $proof, RentalCalculator $calculator): Rental
     {
-        return $this->saveWithProof($proof, 'rental-proofs', function (string $path) use ($user, $quote, $calculator): Rental {
+        return $this->savePayment($proof, 'rental-proofs', function (string $path) use ($user, $quote, $calculator): Rental {
             $details = $quote['details'];
             $garage = Garage::query()->lockForUpdate()->find($details['garage_id']);
             $start = CarbonImmutable::parse($quote['starts_on']);
@@ -97,6 +109,9 @@ class RentalService
         });
     }
 
+    /**
+     * Periksa benturan hanya pada hari tambahan sebelum menawarkan biaya perpanjangan.
+     */
     public function extensionDetails(Rental $rental, CarbonImmutable $newEnd, RentalCalculator $calculator): array
     {
         $charge = $calculator->extensionCharge($rental, $newEnd);
@@ -112,13 +127,16 @@ class RentalService
         return $charge;
     }
 
-    public function extend(User $admin, Rental $rental, array $quote, UploadedFile $proof, RentalCalculator $calculator): Extension
+    /**
+     * Catat pembayaran dan ubah akhir sewa dalam satu transaksi setelah memeriksa ulang pratinjau admin.
+     */
+    public function extendRental(User $admin, Rental $rental, array $quote, UploadedFile $proof, RentalCalculator $calculator): Extension
     {
-        return $this->saveWithProof($proof, 'extension-proofs', function (string $path) use ($admin, $rental, $quote, $calculator): Extension {
-            // Gunakan urutan kunci yang sama dengan transaksi sewa baru.
+        return $this->savePayment($proof, 'extension-proofs', function (string $path) use ($admin, $rental, $quote, $calculator): Extension {
+            // Kunci unit terlebih dahulu agar perpanjangan dan pemesanan unit yang sama diproses bergiliran.
             $garage = Garage::query()->lockForUpdate()->findOrFail($rental->garage_id);
             $currentRental = Rental::query()->lockForUpdate()->findOrFail($rental->id);
-            abort_unless(User::find($admin->id)?->role === 'admin', 403);
+            abort_unless(User::find($admin->id)?->isAdmin(), 403);
 
             if ($currentRental->ends_on !== $quote['old_end']) {
                 throw ValidationException::withMessages(['ends_on' => 'Tanggal selesai berubah. Hitung ulang biaya perpanjangan.']);
@@ -143,7 +161,7 @@ class RentalService
 
             $currentRental->ends_on = $extension->new_end;
             $currentRental->save();
-            if ($currentRental->isActiveOn($today) && $garage->status !== 'used') {
+            if ($currentRental->coversDate($today) && $garage->status !== 'used') {
                 $garage->status = 'used';
                 $garage->save();
             }
@@ -152,7 +170,11 @@ class RentalService
         });
     }
 
-    private function saveWithProof(UploadedFile $proof, string $directory, Closure $save): Rental|Extension
+    /**
+     * Rollback database tidak menghapus berkas di penyimpanan. Jika transaksi gagal,
+     * hapus bukti yang baru diunggah agar tidak ada foto tanpa transaksi terkait.
+     */
+    private function savePayment(UploadedFile $proof, string $directory, Closure $save): Rental|Extension
     {
         $disk = Storage::disk('local');
         $path = $disk->putFile($directory, $proof);
@@ -169,9 +191,13 @@ class RentalService
         }
     }
 
+    /**
+     * Cari sewa yang memakai setidaknya satu hari dalam periode usulan, termasuk kedua tanggal batas.
+     */
     private function overlappingRentals(CarbonImmutable $start, CarbonImmutable $end): Builder
     {
-        // Tanggal mulai dan selesai ikut dihitung sebagai hari yang ditempati.
+        // Sewa bertabrakan jika mulai sebelum atau pada akhir usulan dan berakhir
+        // setelah atau pada awal usulan. Pertemuan pada satu hari saja tetap benturan.
         return Rental::query()
             ->where('starts_on', '<=', $end->toDateString())
             ->where('ends_on', '>=', $start->toDateString());

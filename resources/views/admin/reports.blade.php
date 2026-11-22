@@ -76,9 +76,9 @@
                     <tr>
                         <th class="border-b border-stone-200 bg-red-50 px-4 py-3 text-xs font-semibold tracking-wide text-red-900" scope="row">{{ $label }}@if ($mode === 'renter') (#{{ $key }})@endif</th>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $rentalTotals[$key]->transaction_count ?? 0 }}</td>
-                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::format($rentalTotals[$key]->total ?? 0) }}</td>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($rentalTotals[$key]->total ?? 0) }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $extensionTotals[$key]->transaction_count ?? 0 }}</td>
-                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::format($extensionTotals[$key]->total ?? 0) }}</td>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($extensionTotals[$key]->total ?? 0) }}</td>
                     </tr>
                 @empty
                     <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="5">Tidak ada penyewa yang ditemukan.</td></tr>
@@ -106,7 +106,7 @@
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $rental->ends_on }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $rental->garage->code }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $rental->user->name }}</td>
-                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::format($rental->initial_total) }}</td>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</td>
                     </tr>
                 @empty
                     <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="6">Tidak ada sewa yang sesuai dengan filter.</td></tr>
@@ -137,7 +137,7 @@
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $extension->rental->user->name }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $extension->old_end }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $extension->new_end }}</td>
-                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::format($extension->amount) }}</td>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($extension->amount) }}</td>
                     </tr>
                 @empty
                     <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="7">Tidak ada pembayaran perpanjangan yang sesuai dengan filter.</td></tr>

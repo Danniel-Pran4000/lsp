@@ -11,7 +11,10 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_preserves_nik_and_assigns_pending_user_role(): void
+    /**
+     * Pastikan nol awal NIK tersimpan dan pendaftar baru menunggu persetujuan.
+     */
+    public function testRegistrationPreservesNikAndAssignsPendingUserRole(): void
     {
         $this->get(route('register'))->assertOk();
         $this->post(route('registration.store'), [
@@ -32,7 +35,10 @@ class RegistrationTest extends TestCase
         $this->assertFalse($user->canRent());
     }
 
-    public function test_registration_rejects_invalid_nik_and_a_duplicate_email(): void
+    /**
+     * Periksa agar NIK tidak sah dan email yang sudah dipakai ditolak saat pendaftaran.
+     */
+    public function testRegistrationRejectsInvalidNikAndADuplicateEmail(): void
     {
         $existingUser = User::factory()->create();
         $this->from(route('register'))->post(route('registration.store'), [
@@ -46,7 +52,10 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_admin_can_list_all_renters_and_change_their_status_in_either_direction(): void
+    /**
+     * Pastikan admin dapat melihat semua status dan membalik keputusan persetujuan.
+     */
+    public function testAdminCanListAllRentersAndChangeTheirStatusInEitherDirection(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'approval_status' => null]);
         [$first, $second, $third] = User::factory()->count(3)->create()->all();
@@ -56,7 +65,7 @@ class RegistrationTest extends TestCase
             'password' => 'password',
         ])->assertRedirect(route('registration.index'));
         $this->patch(route('registration.verify', $first), ['decision' => 'approved'])
-            ->assertRedirect(route('registration.index'))->assertSessionHas('status', "{$first->name} approved.");
+            ->assertRedirect(route('registration.index'))->assertSessionHas('status', "Pendaftaran {$first->name} disetujui.");
         $this->patch(route('registration.verify', $second), ['decision' => 'rejected'])->assertRedirect();
         $this->assertTrue($first->refresh()->canRent());
         $this->assertFalse($second->refresh()->canRent());
@@ -76,7 +85,10 @@ class RegistrationTest extends TestCase
         $this->actingAs($second->refresh())->get(route('rentals.create'))->assertOk();
     }
 
-    public function test_admin_routes_require_an_admin_account(): void
+    /**
+     * Periksa agar halaman admin hanya menerima akun berperan admin.
+     */
+    public function testAdminRoutesRequireAnAdminAccount(): void
     {
         $user = User::factory()->create();
         $this->get(route('registration.index'))->assertRedirect(route('login'));

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Siapkan tabel akun awal sebagai dasar autentikasi Laravel.
      */
     public function up(): void
     {
@@ -24,7 +24,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Hapus tabel akun saat migrasi dasar dibatalkan.
      */
     public function down(): void
     {

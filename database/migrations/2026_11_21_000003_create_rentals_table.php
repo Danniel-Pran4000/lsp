@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Rekam pemilik, unit, periode, dan tarif saat pemesanan agar biaya awal dapat ditelusuri.
+     */
     public function up(): void
     {
         Schema::create('rentals', function (Blueprint $table) {
@@ -35,6 +38,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Hapus tabel sewa saat migrasi transaksi awal dibatalkan.
+     */
     public function down(): void
     {
         Schema::dropIfExists('rentals');

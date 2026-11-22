@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Arahkan pengunjung ke halaman masuk atau daftar utama sesuai peran akun.
 Route::get('/', function (Request $request): RedirectResponse {
     return to_route(match ($request->user()?->role) {
         'admin' => 'registration.index',
@@ -21,40 +22,45 @@ Route::get('/', function (Request $request): RedirectResponse {
     });
 });
 
+// Pendaftaran dan login tersedia bagi pengunjung yang belum memiliki sesi.
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [RegistrationController::class, 'create'])->name('register');
-    Route::post('/register', [RegistrationController::class, 'register'])->name('registration.store');
-    Route::get('/login', [SessionController::class, 'create'])->name('login');
-    Route::post('/login', [SessionController::class, 'store'])->middleware('throttle:10,1')->name('login.store');
+    Route::get('/register', [RegistrationController::class, 'showForm'])->name('register');
+    Route::post('/register', [RegistrationController::class, 'registerRenter'])->name('registration.store');
+    Route::get('/login', [SessionController::class, 'showLogin'])->name('login');
+    Route::post('/login', [SessionController::class, 'startSession'])->middleware('throttle:10,1')->name('login.store');
 });
 
+// Sesi diperlukan untuk membuka riwayat. Controller memeriksa hak akses setiap rincian dan foto.
 Route::middleware('auth')->group(function () {
-    Route::get('/account', [SessionController::class, 'show'])->name('account.show');
-    Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
-    Route::get('/rentals/{rental}', [RentalController::class, 'show'])->whereNumber('rental')->name('rentals.show');
-    Route::get('/rentals/{rental}/proof/{extension?}', [RentalController::class, 'proof'])
+    Route::get('/account', [SessionController::class, 'redirectAccount'])->name('account.show');
+    Route::get('/rentals', [RentalController::class, 'listRentals'])->name('rentals.index');
+    Route::get('/rentals/{rental}', [RentalController::class, 'showRental'])->whereNumber('rental')->name('rentals.show');
+    Route::get('/rentals/{rental}/proof/{extension?}', [RentalController::class, 'serveProof'])
         ->whereNumber(['rental', 'extension'])->name('rentals.proof');
-    Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
+    Route::post('/logout', [SessionController::class, 'endSession'])->name('logout');
 });
 
+// Persetujuan akun diperlukan sejak penyusunan rencana hingga konfirmasi sewa baru.
 Route::middleware(['auth', EnsureApprovedRenter::class])->group(function () {
-    Route::get('/rentals/create', [RentalController::class, 'create'])->name('rentals.create');
-    Route::post('/rentals/available', [RentalController::class, 'available'])->name('rentals.available');
-    Route::match(['get', 'post'], '/rentals/preview', [RentalController::class, 'preview'])->name('rentals.preview');
-    Route::post('/rentals', [RentalController::class, 'store'])->name('rentals.store');
+    Route::get('/rentals/create', [RentalController::class, 'showForm'])->name('rentals.create');
+    Route::post('/rentals/available', [RentalController::class, 'findUnits'])->name('rentals.available');
+    Route::match(['get', 'post'], '/rentals/preview', [RentalController::class, 'previewRental'])->name('rentals.preview');
+    Route::post('/rentals', [RentalController::class, 'saveRental'])->name('rentals.store');
 });
 
+// Batasi pengelolaan pendaftar, unit, perpanjangan, dan laporan kepada admin.
 Route::middleware(['auth', EnsureAdmin::class])->group(function () {
-    Route::get('/admin/rentals', [AdminRentalController::class, 'index'])->name('admin.rentals');
-    Route::get('/admin/users', [RegistrationController::class, 'index'])->name('registration.index');
-    Route::patch('/admin/users/{user}', [RegistrationController::class, 'verify'])->name('registration.verify');
+    Route::get('/admin/rentals', [AdminRentalController::class, 'listRentals'])->name('admin.rentals');
+    Route::get('/admin/users', [RegistrationController::class, 'listRenters'])->name('registration.index');
+    Route::patch('/admin/users/{user}', [RegistrationController::class, 'reviewRenter'])->name('registration.verify');
+    // Alihkan tautan daftar pendaftar lama ke alamat daftar penyewa yang sekarang.
     Route::get('/admin/registrations', fn (): RedirectResponse => to_route('registration.index'));
-    Route::patch('/admin/registrations/{user}', [RegistrationController::class, 'verify']);
-    Route::get('/admin/garages', [GarageController::class, 'index'])->name('garages.index');
-    Route::get('/admin/garages/create', [GarageController::class, 'create'])->name('garages.create');
-    Route::post('/admin/garages', [GarageController::class, 'storeBatch'])->name('garages.store-batch');
+    Route::patch('/admin/registrations/{user}', [RegistrationController::class, 'reviewRenter']);
+    Route::get('/admin/garages', [GarageController::class, 'listGarages'])->name('garages.index');
+    Route::get('/admin/garages/create', [GarageController::class, 'showForm'])->name('garages.create');
+    Route::post('/admin/garages', [GarageController::class, 'createUnits'])->name('garages.store-batch');
     Route::get('/admin/extensions', [ExtensionController::class, 'activeRentals'])->name('extensions.create');
-    Route::get('/admin/extensions/{rental}', [ExtensionController::class, 'preview'])->name('extensions.preview');
-    Route::post('/admin/extensions/{rental}', [ExtensionController::class, 'store'])->name('extensions.store');
-    Route::get('/admin/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/admin/extensions/{rental}', [ExtensionController::class, 'previewExtension'])->name('extensions.preview');
+    Route::post('/admin/extensions/{rental}', [ExtensionController::class, 'saveExtension'])->name('extensions.store');
+    Route::get('/admin/reports', [ReportController::class, 'showReport'])->name('reports.index');
 });

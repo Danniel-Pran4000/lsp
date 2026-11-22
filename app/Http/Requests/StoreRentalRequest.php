@@ -8,6 +8,9 @@ class StoreRentalRequest extends FormRequest
 {
     protected $redirectRoute = 'rentals.preview';
 
+    /**
+     * Wajibkan ID pratinjau dan gambar bukti bayar sebelum sewa dapat disimpan.
+     */
     public function rules(): array
     {
         return [

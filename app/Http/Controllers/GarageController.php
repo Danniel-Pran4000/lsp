@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGarageBatchRequest;
 use App\Models\Garage;
 use App\Services\RentalService;
-use App\Support\TypeFilter;
+use App\Support\GarageTypeFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
@@ -16,17 +16,23 @@ use Illuminate\View\View;
 
 class GarageController extends Controller
 {
-    public function index(Request $request, RentalService $rentals): View
+    /**
+     * Tampilkan unit yang kosong hari ini sesuai filter tipe yang dipilih admin.
+     */
+    public function listGarages(Request $request, RentalService $rentals): View
     {
         $types = Garage::TYPE_LABELS;
-        $query = $rentals->availableToday(CarbonImmutable::today());
-        $selectedType = TypeFilter::apply($query, $request->query('type'));
+        $query = $rentals->vacantUnits(CarbonImmutable::today());
+        $selectedType = GarageTypeFilter::applyFilter($query, $request->query('type'));
         $garages = $query->orderBy('code')->paginate(15)->appends(['type' => $selectedType]);
 
         return view('admin.garages', compact('garages', 'types', 'selectedType'));
     }
 
-    public function create(): View
+    /**
+     * Siapkan pilihan tipe dan batas kapasitas untuk formulir penambahan unit.
+     */
+    public function showForm(): View
     {
         return view('admin.garage-create', [
             'type' => old('type', 'S'),
@@ -35,15 +41,20 @@ class GarageController extends Controller
         ]);
     }
 
-    public function storeBatch(StoreGarageBatchRequest $request): RedirectResponse
+    /**
+     * Alokasikan kode berurutan per tipe dalam satu transaksi agar penambahan unit berhasil atau batal sebagai satu kelompok.
+     */
+    public function createUnits(StoreGarageBatchRequest $request): RedirectResponse
     {
         $data = $request->validated();
         $type = $data['type'];
         $quantity = (int) $data['quantity'];
-        // Kode berawalan sama dengan tiga digit dapat diurutkan sebagai teks.
+        // Lebar tiga digit membuat urutan teks sama dengan urutan nomor untuk tipe yang sama.
         $garagesOfType = Garage::whereBetween('code', [$type.'001', $type.Garage::MAX_UNITS_PER_TYPE]);
 
         try {
+            // Periksa kapasitas dan masukkan seluruh batch dalam satu transaksi.
+            // Constraint unik melindungi kode jika permintaan lain mengambil nomor yang sama.
             $codes = DB::transaction(function () use ($garagesOfType, $type, $quantity, $data): array {
                 $lastNumber = (int) substr($garagesOfType->max('code') ?? '', 1);
                 $remaining = Garage::MAX_UNITS_PER_TYPE - $lastNumber;

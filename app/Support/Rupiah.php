@@ -6,7 +6,10 @@ use Stringable;
 
 class Rupiah
 {
-    public static function format(string|int|float|Stringable $amount): string
+    /**
+     * Format nominal untuk tampilan rupiah dengan mempertahankan pecahan yang masih bernilai.
+     */
+    public static function formatAmount(string|int|float|Stringable $amount): string
     {
         [$integer, $fraction] = array_pad(explode('.', (string) $amount, 2), 2, '');
         $integer = preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', $integer);

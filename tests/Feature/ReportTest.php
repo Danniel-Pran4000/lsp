@@ -13,7 +13,10 @@ class ReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_monthly_report_counts_each_rental_once_and_groups_payments_by_their_own_date(): void
+    /**
+     * Pastikan sewa awal dihitung sekali dan pembayaran tambahan masuk bulan saat perpanjangan.
+     */
+    public function testMonthlyReportCountsEachRentalOnceAndGroupsPaymentsByTheirOwnDate(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $renter = User::factory()->create(['role' => 'user']);
@@ -24,8 +27,8 @@ class ReportTest extends TestCase
         $this->rental($renter, $garage, '2025-11-01', '2025-11-03', 999000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'monthly', 'year' => 2026]))
-            ->assertOk()->assertSee('January')->assertSee('December')->assertSee('No.')->assertDontSee('Rental ID')
-            ->assertSee('IDR 309.000')->assertSee('IDR 225.000')->assertDontSee('IDR 999.000');
+            ->assertOk()->assertSee('Januari')->assertSee('Desember')->assertSee('No.')->assertDontSee('Rental ID')
+            ->assertSee('Rp 309.000')->assertSee('Rp 225.000')->assertDontSee('Rp 999.000');
 
         $this->assertCount(12, $report->viewData('groups'));
         $rentals = $report->viewData('rentalTotals');
@@ -39,7 +42,10 @@ class ReportTest extends TestCase
         $this->assertCount(2, $report->viewData('extensionDetails'));
     }
 
-    public function test_daily_report_uses_the_selected_month_and_includes_its_last_day(): void
+    /**
+     * Periksa laporan Februari kabisat hingga hari terakhir pada halaman kedua.
+     */
+    public function testDailyReportUsesTheSelectedMonthAndIncludesItsLastDay(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $renter = User::factory()->create(['role' => 'user']);
@@ -49,15 +55,21 @@ class ReportTest extends TestCase
         $this->payment($rental, $admin, '2028-03-01', 80000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'daily', 'year' => 2028, 'month' => 2]))
-            ->assertOk()->assertSee('01 February')->assertSee('29 February')
-            ->assertSee('IDR 30.000')->assertSee('IDR 10.000')->assertDontSee('IDR 80.000');
+            ->assertOk()->assertSee('01 Februari')->assertDontSee('29 Februari')
+            ->assertSee('Rp 30.000')->assertSee('Rp 10.000')->assertDontSee('Rp 80.000');
 
-        $this->assertCount(29, $report->viewData('groups'));
+        $this->assertCount(15, $report->viewData('groups'));
+        $this->assertSame(29, $report->viewData('groups')->total());
+        $this->get(route('reports.index', ['mode' => 'daily', 'year' => 2028, 'month' => 2, 'summary_page' => 2]))
+            ->assertOk()->assertSee('29 Februari')->assertDontSee('01 Februari');
         $this->assertSame('30000', (string) $report->viewData('rentalTotals')[29]->total);
         $this->assertSame('10000', (string) $report->viewData('extensionTotals')[29]->total);
     }
 
-    public function test_type_and_renter_filters_apply_to_summary_and_both_detail_tables(): void
+    /**
+     * Pastikan filter tipe dan penyewa berlaku pada ringkasan serta kedua tabel rincian.
+     */
+    public function testTypeAndRenterFiltersApplyToSummaryAndBothDetailTables(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'name' => 'Admin Uji']);
         $first = User::factory()->create(['role' => 'user', 'name' => 'Penyewa Satu']);
@@ -70,12 +82,12 @@ class ReportTest extends TestCase
         $this->payment($secondRental, $admin, '2026-11-23', 75000);
 
         $allTypes = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'type']))->assertOk();
-        $this->assertSame(['S', 'C', 'E'], array_keys($allTypes->viewData('groups')));
+        $this->assertSame(['S', 'C', 'E'], array_keys($allTypes->viewData('groups')->items()));
         $this->assertSame('150000', (string) $allTypes->viewData('rentalTotals')['C']->total);
 
         $byType = $this->get(route('reports.index', ['mode' => 'type', 'garage_type' => 'S']))
-            ->assertOk()->assertSee('S001')->assertDontSee('C001')->assertDontSee('IDR 75.000');
-        $this->assertSame(['S'], array_keys($byType->viewData('groups')));
+            ->assertOk()->assertSee('S001')->assertDontSee('C001')->assertDontSee('Rp 75.000');
+        $this->assertSame(['S'], array_keys($byType->viewData('groups')->items()));
         $this->assertCount(1, $byType->viewData('rentalDetails'));
         $this->assertCount(1, $byType->viewData('extensionDetails'));
 
@@ -85,12 +97,15 @@ class ReportTest extends TestCase
 
         $byRenter = $this->get(route('reports.index', ['mode' => 'renter', 'user_id' => $second->id]))
             ->assertOk()->assertSee('C001')->assertDontSee('S001');
-        $this->assertSame([$second->id], array_keys($byRenter->viewData('groups')));
+        $this->assertSame([$second->id], array_keys($byRenter->viewData('groups')->items()));
         $this->assertCount(1, $byRenter->viewData('rentalDetails'));
         $this->assertCount(1, $byRenter->viewData('extensionDetails'));
     }
 
-    public function test_report_requires_admin_and_valid_filters(): void
+    /**
+     * Periksa akses admin dan penolakan filter periode atau penyewa yang tidak sah.
+     */
+    public function testReportRequiresAdminAndValidFilters(): void
     {
         $this->get(route('reports.index'))->assertRedirect(route('login'));
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
@@ -102,6 +117,9 @@ class ReportTest extends TestCase
             ->assertRedirect(route('reports.index'))->assertSessionHasErrors('user_id');
     }
 
+    /**
+     * Siapkan sewa bernominal tetap agar agregat laporan dapat dibandingkan dengan hasil yang diketahui.
+     */
     private function rental(User $renter, Garage $garage, string $start, string $end, int $total): Rental
     {
         return Rental::forceCreate([
@@ -113,6 +131,9 @@ class ReportTest extends TestCase
         ]);
     }
 
+    /**
+     * Catat pembayaran tambahan pada tanggal pilihan untuk menguji pemisahan periode laporan.
+     */
     private function payment(Rental $rental, User $admin, string $date, int $amount): void
     {
         Extension::create([

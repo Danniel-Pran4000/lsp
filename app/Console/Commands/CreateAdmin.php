@@ -12,6 +12,9 @@ class CreateAdmin extends Command
 
     protected $description = 'Membuat akun admin untuk verifikasi pendaftar';
 
+    /**
+     * Buat akun admin melalui konsol agar peran admin diberikan di luar pendaftaran penyewa.
+     */
     public function handle(): int
     {
         $validator = Validator::make([

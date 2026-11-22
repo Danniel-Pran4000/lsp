@@ -6,6 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ExtensionRequest extends FormRequest
 {
+    /**
+     * Validasi tanggal saat menghitung biaya serta bukti dan ID pratinjau saat mengonfirmasi.
+     */
     public function rules(): array
     {
         if ($this->isMethod('post')) {
@@ -18,6 +21,9 @@ class ExtensionRequest extends FormRequest
         return ['ends_on' => ['sometimes', 'required', 'date_format:Y-m-d']];
     }
 
+    /**
+     * Kembalikan admin ke perpanjangan sewa yang sama saat validasi gagal agar tanggal pilihan dapat ditinjau kembali.
+     */
     protected function getRedirectUrl(): string
     {
         $rental = $this->route('rental');

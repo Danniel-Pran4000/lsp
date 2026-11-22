@@ -6,6 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterUserRequest extends FormRequest
 {
+    /**
+     * Periksa identitas penyewa, keunikan email, dan kata sandi sebelum akun dapat didaftarkan.
+     */
     public function rules(): array
     {
         return [

@@ -12,7 +12,10 @@ class AdminTypeFilterTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_garage_list_filters_free_units_using_inclusive_rental_dates(): void
+    /**
+     * Periksa bahwa hari pertama dan terakhir sewa ikut menentukan unit yang kosong hari ini.
+     */
+    public function testGarageListFiltersFreeUnitsUsingInclusiveRentalDates(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 21)->startOfDay());
         $this->get(route('garages.index'))->assertRedirect(route('login'));
@@ -35,13 +38,16 @@ class AdminTypeFilterTest extends TestCase
         $this->get(route('garages.index', ['type' => 'E']))
             ->assertOk()->assertSee('E001')->assertDontSee('C001');
         $this->get(route('garages.index', ['type' => 'S']))
-            ->assertOk()->assertSee('No available garage units found.');
+            ->assertOk()->assertSee('Tidak ada unit garasi kosong untuk tipe ini.');
         $this->get(route('garages.index', ['type' => ['E']]))
             ->assertOk()->assertSee('C001')->assertSee('E001');
         $this->assertSame('used', $past->refresh()->status);
     }
 
-    public function test_rentals_filter_uses_the_assigned_garage_type_and_keeps_the_selection_on_page_two(): void
+    /**
+     * Pastikan filter memakai tipe garasi transaksi dan tetap berlaku pada halaman berikutnya.
+     */
+    public function testRentalsFilterUsesTheAssignedGarageTypeAndKeepsTheSelectionOnPageTwo(): void
     {
         $renter = User::factory()->create(['role' => 'user']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 50000]);
@@ -59,7 +65,7 @@ class AdminTypeFilterTest extends TestCase
         $pageTwo = route('admin.rentals', ['type' => 'S', 'page' => 2]);
         $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->get(route('admin.rentals', ['type' => 'S']))
-            ->assertOk()->assertSee('Garage type')->assertSee($pageTwo)
+            ->assertOk()->assertSee('Tipe garasi')->assertSee($pageTwo)
             ->assertSee($motorcycleLink, false)->assertSee($bikeLink, false)->assertDontSee($carLink, false);
         $this->get($pageTwo)
             ->assertOk()->assertSee('2026-11-03')->assertDontSee($carLink, false);
@@ -67,6 +73,9 @@ class AdminTypeFilterTest extends TestCase
             ->assertOk()->assertSee($carLink, false)->assertDontSee($bikeLink, false);
     }
 
+    /**
+     * Siapkan transaksi dengan kategori dan periode pilihan untuk membandingkan hasil filter.
+     */
     private function rental(User $renter, Garage $garage, string $category, string $start, string $end): Rental
     {
         return Rental::forceCreate([
