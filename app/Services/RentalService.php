@@ -151,7 +151,6 @@ class RentalService
 
             $extension = Extension::create([
                 'rental_id' => $currentRental->id,
-                'admin_id' => $admin->id,
                 'extended_on' => $today->toDateString(),
                 'old_end' => $currentRental->ends_on,
                 'new_end' => $newEnd->toDateString(),

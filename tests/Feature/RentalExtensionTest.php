@@ -93,7 +93,7 @@ class RentalExtensionTest extends TestCase
             ->assertSessionHas('status', 'Sewa Merek uji Model uji berhasil diperpanjang. Unit E001.');
 
         $this->assertDatabaseHas('extensions', [
-            'rental_id' => $rental->id, 'admin_id' => $admin->id, 'extended_on' => '2026-11-21',
+            'rental_id' => $rental->id, 'extended_on' => '2026-11-21',
             'old_end' => '2026-11-25', 'new_end' => '2026-11-28', 'amount' => 120000,
         ]);
         $this->assertDatabaseHas('rentals', [

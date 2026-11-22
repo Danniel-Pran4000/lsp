@@ -71,7 +71,6 @@ class RentalListTest extends TestCase
     public function testTheDisplayedPriceIncludesEveryExtensionOnce(): void
     {
         $renter = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
-        $admin = User::factory()->create(['role' => 'admin']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 50000]);
         $rental = $this->rental($renter, $garage, '2026-11-21', '2026-11-26');
 
@@ -81,7 +80,6 @@ class RentalListTest extends TestCase
         ] as [$oldEnd, $newEnd, $amount]) {
             Extension::create([
                 'rental_id' => $rental->id,
-                'admin_id' => $admin->id,
                 'extended_on' => '2026-11-21',
                 'old_end' => $oldEnd,
                 'new_end' => $newEnd,

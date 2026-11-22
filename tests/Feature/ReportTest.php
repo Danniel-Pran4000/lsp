@@ -22,8 +22,8 @@ class ReportTest extends TestCase
         $renter = User::factory()->create(['role' => 'user']);
         $garage = Garage::create(['code' => 'E001', 'type' => 'E', 'daily_rate' => 75000, 'kwh_rate' => 2000]);
         $rental = $this->rental($renter, $garage, '2026-11-30', '2026-12-05', 309000);
-        $this->payment($rental, $admin, '2026-12-01', 150000);
-        $this->payment($rental, $admin, '2026-12-02', 75000);
+        $this->payment($rental, '2026-12-01', 150000);
+        $this->payment($rental, '2026-12-02', 75000);
         $this->rental($renter, $garage, '2025-11-01', '2025-11-03', 999000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'monthly', 'year' => 2026]))
@@ -51,8 +51,8 @@ class ReportTest extends TestCase
         $renter = User::factory()->create(['role' => 'user']);
         $garage = Garage::create(['code' => 'S001', 'type' => 'S', 'daily_rate' => 10000]);
         $rental = $this->rental($renter, $garage, '2028-02-29', '2028-03-02', 30000);
-        $this->payment($rental, $admin, '2028-02-29', 10000);
-        $this->payment($rental, $admin, '2028-03-01', 80000);
+        $this->payment($rental, '2028-02-29', 10000);
+        $this->payment($rental, '2028-03-01', 80000);
 
         $report = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'daily', 'year' => 2028, 'month' => 2]))
             ->assertOk()->assertSee('01 Februari')->assertDontSee('29 Februari')
@@ -78,8 +78,8 @@ class ReportTest extends TestCase
         $car = Garage::create(['code' => 'C001', 'type' => 'C', 'daily_rate' => 75000]);
         $firstRental = $this->rental($first, $bike, '2026-11-20', '2026-11-21', 20000);
         $secondRental = $this->rental($second, $car, '2026-11-22', '2026-11-23', 150000);
-        $this->payment($firstRental, $admin, '2026-11-21', 10000);
-        $this->payment($secondRental, $admin, '2026-11-23', 75000);
+        $this->payment($firstRental, '2026-11-21', 10000);
+        $this->payment($secondRental, '2026-11-23', 75000);
 
         $allTypes = $this->actingAs($admin)->get(route('reports.index', ['mode' => 'type']))->assertOk();
         $this->assertSame(['S', 'C', 'E'], array_keys($allTypes->viewData('groups')->items()));
@@ -92,7 +92,8 @@ class ReportTest extends TestCase
         $this->assertCount(1, $byType->viewData('extensionDetails'));
 
         $allRenters = $this->get(route('reports.index', ['mode' => 'renter']))
-            ->assertOk()->assertSee('Penyewa Satu')->assertSee('Penyewa Dua');
+            ->assertOk()->assertSee('Penyewa Satu')->assertSee('Penyewa Dua')
+            ->assertDontSee("(#{$first->id})")->assertDontSee("(#{$second->id})");
         $this->assertSame('75000', (string) $allRenters->viewData('extensionTotals')[$second->id]->total);
 
         $byRenter = $this->get(route('reports.index', ['mode' => 'renter', 'user_id' => $second->id]))
@@ -134,10 +135,10 @@ class ReportTest extends TestCase
     /**
      * Catat pembayaran tambahan pada tanggal pilihan untuk menguji pemisahan periode laporan.
      */
-    private function payment(Rental $rental, User $admin, string $date, int $amount): void
+    private function payment(Rental $rental, string $date, int $amount): void
     {
         Extension::create([
-            'rental_id' => $rental->id, 'admin_id' => $admin->id, 'extended_on' => $date,
+            'rental_id' => $rental->id, 'extended_on' => $date,
             'old_end' => $rental->ends_on, 'new_end' => '2028-03-05', 'amount' => $amount,
             'proof_path' => 'bukti-perpanjangan.png',
         ]);

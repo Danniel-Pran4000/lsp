@@ -74,7 +74,7 @@
             <tbody class="divide-y divide-stone-100">
                 @forelse ($groups as $key => $label)
                     <tr>
-                        <th class="border-b border-stone-200 bg-red-50 px-4 py-3 text-xs font-semibold tracking-wide text-red-900" scope="row">{{ $label }}@if ($mode === 'renter') (#{{ $key }})@endif</th>
+                        <th class="border-b border-stone-200 bg-red-50 px-4 py-3 text-xs font-semibold tracking-wide text-red-900" scope="row">{{ $label }}</th>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $rentalTotals[$key]->transaction_count ?? 0 }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($rentalTotals[$key]->total ?? 0) }}</td>
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ $extensionTotals[$key]->transaction_count ?? 0 }}</td>
