@@ -24,12 +24,12 @@
             <fieldset class="min-w-0 space-y-4 rounded-xl border border-stone-200 p-4 sm:p-5">
                 <legend class="px-2 text-sm font-semibold">Tarif</legend>
                 <label class="block text-sm font-medium">Tarif harian (Rp)
-                    <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" type="number" name="daily_rate" min="0" max="999999999999.99" step="0.01" value="{{ old('daily_rate') }}" required>
+                    <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" type="number" name="daily_rate" min="0" max="999999999999" step="1" value="{{ old('daily_rate') }}" required>
                 </label>
 
                 <label class="block text-sm font-medium" data-electricity-rate>Tarif per kWh (Rp)
                     <span class="block text-xs text-stone-600">Khusus garasi mobil listrik.</span>
-                    <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" type="number" name="kwh_rate" min="0" max="999999999999.99" step="0.01"
+                    <input class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-neutral-900 focus:outline-2 focus:outline-offset-2 focus:outline-red-700 disabled:bg-stone-100" type="number" name="kwh_rate" min="0" max="999999999999" step="1"
                         value="{{ old('kwh_rate') }}">
                 </label>
             </fieldset>

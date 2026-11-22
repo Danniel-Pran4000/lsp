@@ -34,6 +34,9 @@ class RentalBookingTest extends TestCase
         $this->post(route('rentals.preview'), [...$plan, 'garage_type' => 'E', 'garage_id' => $garage->id, 'remaining_percent' => '101'])
             ->assertSessionHasErrors('remaining_percent');
 
+        $this->post(route('rentals.preview'), [...$plan, 'garage_type' => 'E', 'garage_id' => $garage->id, 'battery_kwh' => '60.001'])
+            ->assertSessionHasErrors('battery_kwh');
+
         $quoteId = $this->requestQuote($garage, $details, 'Rp 309.000');
         $this->post(route('rentals.store'), ['quote_id' => $quoteId, 'proof' => $this->proofImage()])
             ->assertRedirect(route('rentals.index'));
@@ -94,8 +97,10 @@ class RentalBookingTest extends TestCase
             'electricity_amount' => 84000,
             'initial_total' => 1484000,
         ]);
-        Storage::disk('local')->assertExists(Rental::sole()->proof_path);
+        $rental = Rental::sole();
+        Storage::disk('local')->assertExists($rental->proof_path);
         $this->assertSame('used', $garage->refresh()->status);
+        $this->get(route('rentals.show', $rental))->assertOk()->assertSee('42,00 kWh')->assertSee('Rp 84.000');
     }
 
     /**
@@ -162,16 +167,16 @@ class RentalBookingTest extends TestCase
     /**
      * Uji perbedaan biaya listrik antara garasi biasa dan listrik serta pembulatan totalnya.
      */
-    public function testElectricityIsChargedOnlyForEAndTotalIsRoundedOnce(): void
+    public function testElectricityIsChargedOnlyForEInWholeRupiah(): void
     {
         $user = User::factory()->create(['role' => 'user', 'approval_status' => 'approved']);
-        $regular = Garage::create(['code' => 'C001', 'type' => 'C', 'daily_rate' => '50.49']);
-        $electric = Garage::create(['code' => 'E001', 'type' => 'E', 'daily_rate' => '50.49', 'kwh_rate' => '0.25']);
+        $regular = Garage::create(['code' => 'C001', 'type' => 'C', 'daily_rate' => 50]);
+        $electric = Garage::create(['code' => 'E001', 'type' => 'E', 'daily_rate' => 50, 'kwh_rate' => 1]);
         $electricCar = [
             'vehicle_category' => 'electric_car',
             'plate' => 'B 1234 ABC',
             'battery_kwh' => '1',
-            'remaining_percent' => '0',
+            'remaining_percent' => '50',
         ];
 
         $this->actingAs($user)->requestQuote($regular, $electricCar, 'Rp 50');

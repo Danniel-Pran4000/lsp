@@ -7,14 +7,10 @@ use Stringable;
 class Rupiah
 {
     /**
-     * Format nominal untuk tampilan rupiah dengan mempertahankan pecahan yang masih bernilai.
+     * Beri pemisah ribuan pada nominal rupiah bulat tanpa konversi ke float.
      */
-    public static function formatAmount(string|int|float|Stringable $amount): string
+    public static function formatAmount(string|int|Stringable $amount): string
     {
-        [$integer, $fraction] = array_pad(explode('.', (string) $amount, 2), 2, '');
-        $integer = preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', $integer);
-        $fraction = rtrim($fraction, '0');
-
-        return 'Rp '.$integer.($fraction === '' ? '' : ','.$fraction);
+        return 'Rp '.preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', (string) $amount);
     }
 }

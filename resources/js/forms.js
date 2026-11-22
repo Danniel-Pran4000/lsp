@@ -43,6 +43,7 @@ if (rentalForm) {
     // Batalkan pratinjau lama agar bukti bayar selalu terkait dengan rincian terbaru.
     function resetQuote() {
         revision++;
+        paymentFields.hidden = true;
         paymentFields.disabled = true;
         paymentSummary.hidden = true;
         quoteId.value = '';
@@ -165,6 +166,7 @@ if (rentalForm) {
 
             paymentSummary.innerHTML = result.summary;
             paymentSummary.hidden = false;
+            paymentFields.hidden = false;
             paymentFields.disabled = false;
             quoteId.value = result.quoteId;
             paymentStatus.textContent = 'Periksa rincian biaya lalu unggah bukti pembayaran.';

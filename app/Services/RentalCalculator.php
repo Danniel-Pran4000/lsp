@@ -35,7 +35,7 @@ class RentalCalculator
     /**
      * Satu bulan mengikuti kalender untuk masa pakai, tetapi biayanya setara 25 hari.
      * Untuk garasi listrik, tagihkan energi yang diperlukan sampai baterai penuh.
-     * Bulatkan total setelah biaya sewa dan listrik dijumlahkan agar pecahan rupiah tetap terhitung.
+     * Hitung biaya listrik dari energi sebelum pembulatan, lalu bulatkan tagihannya ke rupiah.
      */
     public function initialCharge(Garage $garage, array $details): array
     {
@@ -43,7 +43,7 @@ class RentalCalculator
             throw ValidationException::withMessages(['remaining_percent' => 'Masukkan persentase sisa baterai.']);
         }
 
-        $dailyRate = BigDecimal::of((string) $garage->daily_rate)->toScale(2);
+        $dailyRate = BigDecimal::of((string) $garage->daily_rate)->toScale(0);
         $billableDays = (int) ($details['months'] ?? 0) * self::BILLABLE_DAYS_PER_MONTH + (int) $details['days'];
         $rentalAmount = $dailyRate->multipliedBy($billableDays);
         $kwhRate = null;
@@ -55,25 +55,25 @@ class RentalCalculator
                 throw ValidationException::withMessages(['garage_id' => 'Tarif listrik untuk unit ini belum tersedia.']);
             }
 
-            $kwhRate = BigDecimal::of((string) $garage->kwh_rate)->toScale(2);
+            $kwhRate = BigDecimal::of((string) $garage->kwh_rate)->toScale(0);
             $missingPercent = BigDecimal::of(100)->minus((string) $details['remaining_percent']);
             $energy = BigDecimal::of((string) $details['battery_kwh'])
                 ->multipliedBy($missingPercent)->dividedByExact(100);
-            $electricityAmount = $energy->multipliedBy($kwhRate);
+            $electricityAmount = $energy->multipliedBy($kwhRate)->toScale(0, RoundingMode::HalfUp);
         }
 
-        $total = $rentalAmount->plus($electricityAmount)->toScale(0, RoundingMode::HalfUp);
+        $total = $rentalAmount->plus($electricityAmount);
 
-        if ($electricityAmount->compareTo('1000000000000000') >= 0 || $total->compareTo(PHP_INT_MAX) > 0) {
+        if ($total->compareTo(PHP_INT_MAX) > 0) {
             throw ValidationException::withMessages(['garage_id' => 'Biaya melebihi batas yang didukung. Periksa durasi atau pilih unit lain.']);
         }
 
         return [
             'daily_rate' => (string) $dailyRate,
             'kwh_rate' => $kwhRate === null ? null : (string) $kwhRate,
-            'energy_kwh' => (string) $energy->toScale(7),
+            'energy_kwh' => (string) $energy->toScale(2, RoundingMode::HalfUp),
             'rental_amount' => (string) $rentalAmount,
-            'electricity_amount' => (string) $electricityAmount->toScale(9),
+            'electricity_amount' => (string) $electricityAmount,
             'initial_total' => (string) $total,
         ];
     }

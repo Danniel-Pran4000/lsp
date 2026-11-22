@@ -44,7 +44,7 @@ class RentalCalculatorTest extends TestCase
     #[DataProvider('bicycleCharges')]
     public function testItPricesDaysAndMonthsAtTheDailyRate(int $months, int $days, string $total): void
     {
-        $garage = new Garage(['type' => 'S', 'daily_rate' => '50000.00']);
+        $garage = new Garage(['type' => 'S', 'daily_rate' => '50000']);
         $charge = (new RentalCalculator)->initialCharge($garage, [
             'vehicle_category' => 'bicycle',
             'months' => $months,
@@ -78,7 +78,7 @@ class RentalCalculatorTest extends TestCase
         string $electricity,
         string $total,
     ): void {
-        $garage = new Garage(['type' => $garageType, 'daily_rate' => '75000.00', 'kwh_rate' => $kwhRate]);
+        $garage = new Garage(['type' => $garageType, 'daily_rate' => '75000', 'kwh_rate' => $kwhRate]);
         $charge = (new RentalCalculator)->initialCharge($garage, [
             'vehicle_category' => 'electric_car',
             'days' => 3,
@@ -86,7 +86,7 @@ class RentalCalculatorTest extends TestCase
             'remaining_percent' => $remainingPercent,
         ]);
 
-        $this->assertSame('225000.00', $charge['rental_amount']);
+        $this->assertSame('225000', $charge['rental_amount']);
         $this->assertSame($kwhRate, $charge['kwh_rate']);
         $this->assertSame($energy, $charge['energy_kwh']);
         $this->assertSame($electricity, $charge['electricity_amount']);
@@ -99,29 +99,30 @@ class RentalCalculatorTest extends TestCase
     public static function electricCharges(): array
     {
         return [
-            'UT-05 partially charged' => ['E', '2000.00', '30', '42.0000000', '84000.000000000', '309000'],
-            'UT-06 empty battery' => ['E', '2000.00', '0', '60.0000000', '120000.000000000', '345000'],
-            'UT-06 full battery' => ['E', '2000.00', '100', '0.0000000', '0.000000000', '225000'],
-            'UT-07 electric car in a C garage' => ['C', null, '30', '0.0000000', '0.000000000', '225000'],
+            'UT-05 partially charged' => ['E', '2000', '30', '42.00', '84000', '309000'],
+            'UT-06 empty battery' => ['E', '2000', '0', '60.00', '120000', '345000'],
+            'UT-06 full battery' => ['E', '2000', '100', '0.00', '0', '225000'],
+            'UT-07 electric car in a C garage' => ['C', null, '30', '0.00', '0', '225000'],
         ];
     }
 
     /**
-     * Pastikan pecahan biaya digabung sebelum total dibulatkan ke rupiah.
+     * Periksa bahwa biaya dibulatkan dari energi presisi dan energi yang disimpan memiliki dua desimal.
      */
-    public function testItRoundsTheCombinedTotalOnce(): void
+    public function testItRoundsEnergyAndElectricityCharge(): void
     {
-        $garage = new Garage(['type' => 'E', 'daily_rate' => '100.25', 'kwh_rate' => '0.50']);
+        $garage = new Garage(['type' => 'E', 'daily_rate' => '100', 'kwh_rate' => '300']);
         $charge = (new RentalCalculator)->initialCharge($garage, [
             'vehicle_category' => 'electric_car',
             'days' => 1,
-            'battery_kwh' => '1',
+            'battery_kwh' => '1.23',
             'remaining_percent' => '50',
         ]);
 
-        $this->assertSame('100.25', $charge['rental_amount']);
-        $this->assertSame('0.250000000', $charge['electricity_amount']);
-        $this->assertSame('101', $charge['initial_total']);
+        $this->assertSame('0.62', $charge['energy_kwh']);
+        $this->assertSame('100', $charge['rental_amount']);
+        $this->assertSame('185', $charge['electricity_amount']);
+        $this->assertSame('285', $charge['initial_total']);
     }
 
     /**
@@ -130,7 +131,7 @@ class RentalCalculatorTest extends TestCase
     #[DataProvider('incompleteCharges')]
     public function testItRejectsMissingChargeInputs(?string $kwhRate, array $details, string $errorField): void
     {
-        $garage = new Garage(['type' => 'E', 'daily_rate' => '75000.00', 'kwh_rate' => $kwhRate]);
+        $garage = new Garage(['type' => 'E', 'daily_rate' => '75000', 'kwh_rate' => $kwhRate]);
 
         try {
             (new RentalCalculator)->initialCharge($garage, [
@@ -151,7 +152,7 @@ class RentalCalculatorTest extends TestCase
     public static function incompleteCharges(): array
     {
         return [
-            'UT-09 battery percentage missing' => ['2000.00', [], 'remaining_percent'],
+            'UT-09 battery percentage missing' => ['2000', [], 'remaining_percent'],
             'UT-09 electricity tariff missing' => [null, ['remaining_percent' => '30'], 'garage_id'],
         ];
     }
@@ -165,7 +166,7 @@ class RentalCalculatorTest extends TestCase
         $rental = (new Rental)->forceFill([
             'starts_on' => '2026-11-01',
             'ends_on' => '2026-11-02',
-            'daily_rate' => '75000.00',
+            'daily_rate' => '75000',
         ]);
 
         $firstEnd = CarbonImmutable::parse('2026-11-03');
@@ -182,7 +183,7 @@ class RentalCalculatorTest extends TestCase
     #[DataProvider('invalidExtensionDates')]
     public function testItRejectsAnEndDateThatDoesNotExtendTheRental(string $newEnd): void
     {
-        $rental = (new Rental)->forceFill(['ends_on' => '2026-11-03', 'daily_rate' => '75000.00']);
+        $rental = (new Rental)->forceFill(['ends_on' => '2026-11-03', 'daily_rate' => '75000']);
 
         try {
             (new RentalCalculator)->extensionCharge($rental, CarbonImmutable::parse($newEnd));
@@ -211,7 +212,7 @@ class RentalCalculatorTest extends TestCase
         $rental = (new Rental)->forceFill([
             'rental_type' => 'monthly',
             'ends_on' => '2026-11-30',
-            'daily_rate' => '40000.00',
+            'daily_rate' => '40000',
         ]);
 
         $charge = (new RentalCalculator)->extensionCharge($rental, CarbonImmutable::parse('2026-12-02'));

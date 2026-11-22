@@ -24,7 +24,7 @@
             </div>
             <div class="flex flex-wrap justify-between gap-2 py-3">
                 <dt class="text-stone-600">Estimasi energi pengisian</dt>
-                <dd class="tabular-nums">{{ str_replace('.', ',', rtrim(rtrim($charge['energy_kwh'], '0'), '.')) }} kWh</dd>
+                <dd class="tabular-nums">{{ str_replace('.', ',', $charge['energy_kwh']) }} kWh</dd>
             </div>
             <div class="flex flex-wrap justify-between gap-2 py-3">
                 <dt class="text-stone-600">Estimasi biaya listrik</dt>

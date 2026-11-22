@@ -15,7 +15,7 @@ class StoreGarageBatchRequest extends FormRequest
     public function rules(): array
     {
         $garageType = ['required', 'in:S,C,E'];
-        $rateRules = ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:999999999999.99'];
+        $rateRules = ['required', 'integer', 'min:0', 'max:999999999999'];
 
         return [
             'type' => $garageType,

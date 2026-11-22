@@ -37,7 +37,7 @@ class GarageBatchTest extends TestCase
             'type' => 'E',
             'quantity' => 1,
             'daily_rate' => '50000',
-            'kwh_rate' => '2000.25',
+            'kwh_rate' => '2000',
         ])->assertSessionHas('status', '1 unit berhasil ditambahkan. Kode unit E001.');
         $this->post(route('garages.store-batch'), [
             'type' => 'S',
@@ -51,7 +51,7 @@ class GarageBatchTest extends TestCase
         ]);
         $this->assertDatabaseHas('garages', ['code' => 'S003', 'daily_rate' => 12000]);
         $this->assertDatabaseHas('garages', [
-            'code' => 'E001', 'type' => 'E', 'daily_rate' => 50000, 'kwh_rate' => 2000.25,
+            'code' => 'E001', 'type' => 'E', 'daily_rate' => 50000, 'kwh_rate' => 2000,
         ]);
         $this->assertDatabaseCount('garages', 5);
     }
@@ -90,7 +90,8 @@ class GarageBatchTest extends TestCase
         $this->actingAs($admin)->post(route('garages.store-batch'), [
             'type' => 'E',
             'quantity' => 1000,
-            'daily_rate' => '50000.001',
+            'daily_rate' => '50000.01',
+            'kwh_rate' => '2000.25',
         ])->assertSessionHasErrors(['quantity', 'daily_rate', 'kwh_rate']);
 
         $this->assertDatabaseCount('garages', 0);

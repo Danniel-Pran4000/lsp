@@ -23,14 +23,14 @@
                 <div><dt class="{{ $label }}">Tanggal selesai awal</dt><dd>{{ $originalEnd }}</dd></div>
                 <div><dt class="{{ $label }}">Tanggal selesai saat ini</dt><dd>{{ $rental->ends_on }}</dd></div>
                 @if ($rental->battery_kwh !== null)
-                    <div><dt class="{{ $label }}">Kapasitas baterai</dt><dd>{{ $rental->battery_kwh }} kWh</dd></div>
+                    <div><dt class="{{ $label }}">Kapasitas baterai</dt><dd>{{ str_replace('.', ',', $rental->battery_kwh) }} kWh</dd></div>
                     <div>
                         <dt class="{{ $label }}">Sisa baterai</dt>
                         <dd>
                             @if ($rental->remaining_percent !== null)
-                                {{ $rental->remaining_percent }}%
+                                {{ str_replace('.', ',', $rental->remaining_percent) }}%
                             @elseif ($rental->remaining_kwh !== null)
-                                {{ $rental->remaining_kwh }} kWh
+                                {{ str_replace('.', ',', $rental->remaining_kwh) }} kWh
                             @else
                                 —
                             @endif
@@ -47,7 +47,7 @@
                 <div><dt class="{{ $label }}">Biaya sewa awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->rental_amount) }}</dd></div>
                 @if ($rental->kwh_rate !== null)
                     <div><dt class="{{ $label }}">Tarif per kWh</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->kwh_rate) }}</dd></div>
-                    <div><dt class="{{ $label }}">Estimasi energi pengisian</dt><dd>{{ $rental->energy_kwh }} kWh</dd></div>
+                    <div><dt class="{{ $label }}">Estimasi energi pengisian</dt><dd>{{ str_replace('.', ',', $rental->energy_kwh) }} kWh</dd></div>
                     <div><dt class="{{ $label }}">Biaya listrik</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->electricity_amount) }}</dd></div>
                 @endif
                 <div><dt class="{{ $label }}">Pembayaran awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</dd></div>
@@ -57,7 +57,7 @@
                     <dd class="text-xl font-semibold text-red-800">{{ \App\Support\Rupiah::formatAmount($total) }}</dd>
                 </div>
             </dl>
-            <h3 class="mb-2 mt-5 text-sm font-semibold">Bukti pembayaran awal</h3>
+            <h3 class="mb-2 mt-5 text-sm font-semibold">Bukti pembayaran</h3>
             <a href="{{ route('rentals.proof', $rental) }}">
                 <img class="max-h-64 w-auto rounded-lg border border-stone-200 object-contain"
                     src="{{ route('rentals.proof', $rental) }}" alt="Foto bukti pembayaran awal">

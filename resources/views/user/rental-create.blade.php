@@ -40,7 +40,7 @@
                     <legend class="text-sm font-medium">Baterai mobil listrik</legend>
                     <div class="mt-2 grid gap-4 sm:grid-cols-2">
                         <label class="block text-sm font-medium">Kapasitas (kWh)
-                            <input class="{{ $field }}" type="number" name="battery_kwh" min="0.001" max="9999999.999" step="0.001" value="{{ old('battery_kwh', $details['battery_kwh'] ?? '') }}">
+                            <input class="{{ $field }}" type="number" name="battery_kwh" min="0.01" max="9999999.99" step="0.01" value="{{ old('battery_kwh', $details['battery_kwh'] ?? '') }}">
                         </label>
                         <label class="block text-sm font-medium">Sisa baterai (%)
                             <input class="{{ $field }}" type="number" name="remaining_percent" min="0" max="100" step="0.01" value="{{ old('remaining_percent', $details['remaining_percent'] ?? '') }}">
@@ -101,10 +101,10 @@
 
         <section class="rounded-xl border border-red-100 bg-red-50/50 p-5" data-inline-payment hidden>
             <h2 class="text-lg font-semibold">Pembayaran</h2>
-            <p class="mt-2 text-sm text-stone-600" role="status" data-payment-status>Tinjau biaya sebelum mengunggah bukti pembayaran.</p>
+            <p class="mt-2 text-sm text-stone-600" role="status" data-payment-status>Tinjau biaya untuk mengecek biaya.</p>
             <div class="mt-4 grid gap-6 lg:grid-cols-2">
                 <div data-payment-summary hidden></div>
-                <fieldset data-payment-fields disabled>
+                <fieldset data-payment-fields hidden disabled>
                     <input type="hidden" name="quote_id" value="">
                     @include('layouts.payment-proof', ['id' => 'inline-payment-proof'])
                 </fieldset>

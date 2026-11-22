@@ -27,6 +27,19 @@ class Rental extends Model
     ];
 
     /**
+     * Pertahankan dua digit desimal pada data energi dan persentase di semua driver database.
+     */
+    protected function casts(): array
+    {
+        return [
+            'battery_kwh' => 'decimal:2',
+            'remaining_percent' => 'decimal:2',
+            'remaining_kwh' => 'decimal:2',
+            'energy_kwh' => 'decimal:2',
+        ];
+    }
+
+    /**
      * Ambil unit yang ditempati untuk menampilkan kode dan tipe garasi pada transaksi.
      */
     public function garage(): BelongsTo

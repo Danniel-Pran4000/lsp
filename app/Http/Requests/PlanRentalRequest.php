@@ -30,7 +30,7 @@ class PlanRentalRequest extends FormRequest
             'brand' => ['required', 'string', 'max:255'],
             'vehicle_model' => ['required', 'string', 'max:255'],
             'plate' => ['exclude_if:vehicle_category,bicycle', 'required', 'string', 'max:255'],
-            'battery_kwh' => ['exclude_unless:vehicle_category,electric_car', 'required', 'numeric', 'decimal:0,3', 'gt:0', 'max:9999999.999'],
+            'battery_kwh' => ['exclude_unless:vehicle_category,electric_car', 'required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999.99'],
             'remaining_percent' => ['exclude_unless:vehicle_category,electric_car', 'required', 'numeric', 'decimal:0,2', 'between:0,100'],
             'starts_on' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->toDateString()],
             'rental_type' => ['required', 'in:daily,monthly'],
