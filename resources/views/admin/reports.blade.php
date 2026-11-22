@@ -10,9 +10,12 @@
                 @endforeach
             </select>
         </label>
-        <noscript><button type="submit" class="rounded-lg border px-3 py-2 text-sm">Pilih jenis laporan</button></noscript>
+        <noscript>
+            <button type="submit" class="rounded-lg border px-3 py-2 text-sm">Pilih jenis laporan</button>
+        </noscript>
     </form>
 
+    {{-- Jenis laporan menentukan filter yang perlu diisi sebelum laporan ditampilkan. --}}
     <form action="{{ route('reports.index') }}" method="get" class="rounded-xl border border-stone-200 p-4 sm:p-5">
         <input type="hidden" name="mode" value="{{ $mode }}">
         <div class="grid gap-4 sm:grid-cols-2">
@@ -81,7 +84,9 @@
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($extensionTotals[$key]->total ?? 0) }}</td>
                     </tr>
                 @empty
-                    <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="5">Tidak ada penyewa yang ditemukan.</td></tr>
+                    <tr>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="5">Tidak ada penyewa yang ditemukan.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
@@ -109,7 +114,9 @@
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</td>
                     </tr>
                 @empty
-                    <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="6">Tidak ada sewa yang sesuai dengan filter.</td></tr>
+                    <tr>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="6">Tidak ada sewa yang sesuai dengan filter.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
@@ -140,7 +147,9 @@
                         <td class="border-b border-stone-100 px-4 py-4 text-neutral-700">{{ \App\Support\Rupiah::formatAmount($extension->amount) }}</td>
                     </tr>
                 @empty
-                    <tr><td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="7">Tidak ada pembayaran perpanjangan yang sesuai dengan filter.</td></tr>
+                    <tr>
+                        <td class="border-b border-stone-100 px-4 py-4 text-neutral-700" colspan="7">Tidak ada pembayaran perpanjangan yang sesuai dengan filter.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

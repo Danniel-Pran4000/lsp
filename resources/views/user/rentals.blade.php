@@ -2,6 +2,7 @@
 @section('title', 'Sewa saya')
 
 @section('content')
+    {{-- Penyewa tetap dapat melihat riwayat selama akun menunggu persetujuan atau ditolak. --}}
     @if ($approvalStatus === 'pending')
         <p class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
             Akun Anda berstatus <strong>Pending</strong> dan masih menunggu persetujuan admin.

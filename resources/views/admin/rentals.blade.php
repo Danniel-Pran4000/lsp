@@ -34,7 +34,9 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="px-4 py-10 text-center text-stone-600" colspan="5">Tidak ada sewa yang ditemukan.</td></tr>
+                    <tr>
+                        <td class="px-4 py-10 text-center text-stone-600" colspan="5">Tidak ada sewa yang ditemukan.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

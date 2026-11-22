@@ -86,9 +86,12 @@
                     </label>
                 </div>
                 <p class="text-sm text-stone-600" role="status" data-availability-status>
+                    {{-- Tampilkan hasil dari server saat formulir dirender ulang. --}}
                     @if ($end)
                         Tanggal selesai {{ $end->format('d/m/Y') }}.
-                        @if (isset($garages) && $garages->isEmpty()) Tidak ada unit kosong pada periode ini. @endif
+                        @if (isset($garages) && $garages->isEmpty())
+                            Tidak ada unit kosong pada periode ini.
+                        @endif
                     @else
                         Isi tanggal dan durasi untuk melihat unit yang tersedia.
                     @endif
@@ -99,6 +102,7 @@
             </fieldset>
         </div>
 
+        {{-- JavaScript membuka ringkasan dan unggahan setelah server mengirim pratinjau. --}}
         <section class="rounded-xl border border-red-100 bg-red-50/50 p-5" data-inline-payment hidden>
             <h2 class="text-lg font-semibold">Pembayaran</h2>
             <p class="mt-2 text-sm text-stone-600" role="status" data-payment-status>Tinjau biaya untuk mengecek biaya.</p>

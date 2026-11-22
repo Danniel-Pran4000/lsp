@@ -10,23 +10,58 @@
         <section class="rounded-lg border border-stone-200 p-5">
             <h2 class="text-lg font-semibold">Kendaraan dan periode</h2>
             <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="{{ $label }}">Penyewa</dt><dd>{{ $rental->user->name }}</dd></div>
-                <div><dt class="{{ $label }}">Unit garasi</dt><dd>{{ $rental->garage->code }} · {{ $garageType }}</dd></div>
-                <div><dt class="{{ $label }}">Kendaraan</dt><dd>{{ $rental->brand }} {{ $rental->vehicle_model }}</dd></div>
-                <div><dt class="{{ $label }}">Kategori kendaraan</dt><dd>{{ $vehicle }}</dd></div>
+                <div>
+                    <dt class="{{ $label }}">Penyewa</dt>
+                    <dd>{{ $rental->user->name }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Unit garasi</dt>
+                    <dd>{{ $rental->garage->code }} · {{ $garageType }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Kendaraan</dt>
+                    <dd>{{ $rental->brand }} {{ $rental->vehicle_model }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Kategori kendaraan</dt>
+                    <dd>{{ $vehicle }}</dd>
+                </div>
                 @if ($rental->plate)
-                    <div><dt class="{{ $label }}">Nomor polisi</dt><dd>{{ $rental->plate }}</dd></div>
+                    <div>
+                        <dt class="{{ $label }}">Nomor polisi</dt>
+                        <dd>{{ $rental->plate }}</dd>
+                    </div>
                 @endif
-                <div><dt class="{{ $label }}">Tipe sewa</dt><dd>{{ $duration }}</dd></div>
-                <div><dt class="{{ $label }}">Durasi awal</dt><dd>{{ $rental->months }} bulan, {{ $rental->days }} hari</dd></div>
-                <div><dt class="{{ $label }}">Tanggal mulai</dt><dd>{{ $rental->starts_on }}</dd></div>
-                <div><dt class="{{ $label }}">Tanggal selesai awal</dt><dd>{{ $originalEnd }}</dd></div>
-                <div><dt class="{{ $label }}">Tanggal selesai saat ini</dt><dd>{{ $rental->ends_on }}</dd></div>
+                <div>
+                    <dt class="{{ $label }}">Tipe sewa</dt>
+                    <dd>{{ $duration }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Durasi awal</dt>
+                    <dd>{{ $rental->months }} bulan, {{ $rental->days }} hari</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Tanggal mulai</dt>
+                    <dd>{{ $rental->starts_on }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Tanggal selesai awal</dt>
+                    <dd>{{ $originalEnd }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Tanggal selesai saat ini</dt>
+                    <dd>{{ $rental->ends_on }}</dd>
+                </div>
+
                 @if ($rental->battery_kwh !== null)
-                    <div><dt class="{{ $label }}">Kapasitas baterai</dt><dd>{{ str_replace('.', ',', $rental->battery_kwh) }} kWh</dd></div>
+                    <div>
+                        <dt class="{{ $label }}">Kapasitas baterai</dt>
+                        <dd>{{ str_replace('.', ',', $rental->battery_kwh) }} kWh</dd>
+                    </div>
                     <div>
                         <dt class="{{ $label }}">Sisa baterai</dt>
                         <dd>
+                            {{-- Catatan sewa lama bisa menyimpan sisa baterai dalam kWh. --}}
                             @if ($rental->remaining_percent !== null)
                                 {{ str_replace('.', ',', $rental->remaining_percent) }}%
                             @elseif ($rental->remaining_kwh !== null)
@@ -43,15 +78,36 @@
         <section class="rounded-lg border border-stone-200 p-5">
             <h2 class="text-lg font-semibold">Pembayaran</h2>
             <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div><dt class="{{ $label }}">Tarif harian</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->daily_rate) }}</dd></div>
-                <div><dt class="{{ $label }}">Biaya sewa awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->rental_amount) }}</dd></div>
+                <div>
+                    <dt class="{{ $label }}">Tarif harian</dt>
+                    <dd>{{ \App\Support\Rupiah::formatAmount($rental->daily_rate) }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Biaya sewa awal</dt>
+                    <dd>{{ \App\Support\Rupiah::formatAmount($rental->rental_amount) }}</dd>
+                </div>
                 @if ($rental->kwh_rate !== null)
-                    <div><dt class="{{ $label }}">Tarif per kWh</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->kwh_rate) }}</dd></div>
-                    <div><dt class="{{ $label }}">Estimasi energi pengisian</dt><dd>{{ str_replace('.', ',', $rental->energy_kwh) }} kWh</dd></div>
-                    <div><dt class="{{ $label }}">Biaya listrik</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->electricity_amount) }}</dd></div>
+                    <div>
+                        <dt class="{{ $label }}">Tarif per kWh</dt>
+                        <dd>{{ \App\Support\Rupiah::formatAmount($rental->kwh_rate) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="{{ $label }}">Estimasi energi pengisian</dt>
+                        <dd>{{ str_replace('.', ',', $rental->energy_kwh) }} kWh</dd>
+                    </div>
+                    <div>
+                        <dt class="{{ $label }}">Biaya listrik</dt>
+                        <dd>{{ \App\Support\Rupiah::formatAmount($rental->electricity_amount) }}</dd>
+                    </div>
                 @endif
-                <div><dt class="{{ $label }}">Pembayaran awal</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</dd></div>
-                <div><dt class="{{ $label }}">Total biaya perpanjangan</dt><dd>{{ \App\Support\Rupiah::formatAmount($rental->extensions_sum_amount ?? 0) }}</dd></div>
+                <div>
+                    <dt class="{{ $label }}">Pembayaran awal</dt>
+                    <dd>{{ \App\Support\Rupiah::formatAmount($rental->initial_total) }}</dd>
+                </div>
+                <div>
+                    <dt class="{{ $label }}">Total biaya perpanjangan</dt>
+                    <dd>{{ \App\Support\Rupiah::formatAmount($rental->extensions_sum_amount ?? 0) }}</dd>
+                </div>
                 <div class="col-span-2 rounded-lg bg-red-50 p-3">
                     <dt>Total pembayaran</dt>
                     <dd class="text-xl font-semibold text-red-800">{{ \App\Support\Rupiah::formatAmount($total) }}</dd>
@@ -92,7 +148,9 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="px-4 py-8 text-center text-stone-600" colspan="5">Belum ada perpanjangan.</td></tr>
+                    <tr>
+                        <td class="px-4 py-8 text-center text-stone-600" colspan="5">Belum ada perpanjangan.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

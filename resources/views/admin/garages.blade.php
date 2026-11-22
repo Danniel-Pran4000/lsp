@@ -34,7 +34,9 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="px-4 py-10 text-center text-stone-600" colspan="4">Tidak ada unit garasi kosong untuk tipe ini.</td></tr>
+                    <tr>
+                        <td class="px-4 py-10 text-center text-stone-600" colspan="4">Tidak ada unit garasi kosong untuk tipe ini.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

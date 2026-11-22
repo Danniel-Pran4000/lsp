@@ -28,16 +28,20 @@
                                 'bg-green-50 text-green-800' => $user->approval_status === 'approved',
                                 'bg-red-50 text-red-800' => $user->approval_status === 'rejected',
                                 'bg-amber-50 text-amber-900' => ! in_array($user->approval_status, ['approved', 'rejected'], true),
-                            ])>{{ match ($user->approval_status) {
-                                'approved' => 'Approved',
-                                'rejected' => 'Rejected',
-                                default => 'Pending',
-                            } }}</span>
+                            ])>
+                                {{ match ($user->approval_status) {
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected',
+                                    default => 'Pending',
+                                } }}
+                            </span>
                         </td>
                         <td class="px-4 py-4 text-right">
                             <form class="flex justify-end gap-2" method="post" action="{{ route('registration.verify', $user) }}">
                                 @csrf
                                 @method('PATCH')
+
+                                {{-- Tampilkan tindakan yang akan mengubah status saat ini. --}}
                                 @if ($user->approval_status !== 'approved')
                                     <button class="inline-block rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700" type="submit" name="decision" value="approved">Setujui</button>
                                 @endif
@@ -48,7 +52,9 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="px-4 py-10 text-center text-stone-600" colspan="6">Belum ada pengguna.</td></tr>
+                    <tr>
+                        <td class="px-4 py-10 text-center text-stone-600" colspan="6">Belum ada pengguna.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>

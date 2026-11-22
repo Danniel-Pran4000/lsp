@@ -47,6 +47,7 @@
         </section>
     </div>
 
+    {{-- Bukti bayar diunggah setelah server menghitung biaya untuk tanggal selesai baru. --}}
     @if ($charge)
         <form id="extension-payment-form" action="{{ route('extensions.store', $rental) }}" method="post" enctype="multipart/form-data"
             class="mt-6 grid gap-5 rounded-xl border border-red-100 bg-red-50/50 p-5 sm:p-6 lg:grid-cols-2">

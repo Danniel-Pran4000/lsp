@@ -1,4 +1,9 @@
-// Nonaktifkan input yang tersembunyi agar nilai dari kategori sebelumnya tidak ikut dikirim.
+/**
+ * Mengatur interaksi formulir garasi, sewa baru, filter admin, dan pemilihan bukti bayar.
+ * Laravel memeriksa ketersediaan unit, menghitung biaya, dan memvalidasi data sebelum menyimpannya.
+ */
+
+// Tampilkan dan wajibkan input yang relevan. Input tersembunyi dinonaktifkan agar nilainya tidak ikut dikirim.
 function toggleFields(section, visible) {
     section.hidden = !visible;
     for (const input of section.querySelectorAll('input')) {
@@ -11,7 +16,7 @@ const garageForm = document.querySelector('[data-garage-form]');
 if (garageForm) {
     const type = garageForm.elements.namedItem('type');
     const electricity = garageForm.querySelector('[data-electricity-rate]');
-    // Tarif per kWh hanya berlaku untuk unit garasi listrik.
+    // Tampilkan tarif per kWh saat formulir dibuka atau tipe berubah, khusus untuk garasi listrik.
     const toggleRate = () => toggleFields(electricity, type.value === 'E');
     type.addEventListener('change', toggleRate);
     toggleRate();
@@ -40,7 +45,7 @@ if (rentalForm) {
     let revision = 0;
     payment.hidden = false;
 
-    // Batalkan pratinjau lama agar bukti bayar selalu terkait dengan rincian terbaru.
+    // Saat rincian berubah, kosongkan ID pratinjau dan pilihan file agar penyewa meninjau biaya terbaru.
     function resetQuote() {
         revision++;
         paymentFields.hidden = true;
@@ -54,7 +59,7 @@ if (rentalForm) {
         rentalForm.action = previewUrl;
     }
 
-    // Sesuaikan isian wajib dan pilihan garasi saat kendaraan atau durasi berubah.
+    // Sesuaikan plat, data baterai, durasi, dan pilihan tipe garasi dengan kendaraan serta tipe sewa.
     function refreshFields() {
         const monthly = duration.value === 'monthly';
         toggleFields(rentalForm.querySelector('[data-plate]'), vehicle.value !== 'bicycle');
@@ -74,8 +79,9 @@ if (rentalForm) {
         if (!compatible.includes(garage.value)) garage.value = compatible[0];
     }
 
-    // Muat unit untuk periode terbaru dan abaikan respons pencarian yang sudah digantikan.
+    // Minta daftar unit dan tanggal selesai ke Laravel setelah input periode valid.
     async function loadUnits() {
+        // Batalkan pencarian sebelumnya agar hasilnya tidak menimpa daftar untuk pilihan terbaru.
         pending?.abort();
         const selected = unit.value || unit.dataset.selectedUnit;
         unit.replaceChildren(new Option('Pilih unit', ''));
@@ -140,7 +146,7 @@ if (rentalForm) {
         }
     });
 
-    // Kiriman pertama meminta pratinjau. ID pratinjau mengizinkan kiriman berikutnya menyimpan sewa.
+    // Tinjau pembayaran mengambil ringkasan biaya dari server. Konfirmasi sewa mengirim ID pratinjau dan bukti bayar.
     rentalForm.addEventListener('submit', async event => {
         if (quoteId.value) return;
         event.preventDefault();
@@ -157,6 +163,7 @@ if (rentalForm) {
                 body: new FormData(rentalForm),
             });
             const result = await response.json();
+            // Abaikan hasil jika penyewa mengubah rincian sambil menunggu pratinjau.
             if (revision !== original) return;
             if (!response.ok) {
                 paymentStatus.textContent = Object.values(result.errors ?? {}).flat()[0]
@@ -179,6 +186,7 @@ if (rentalForm) {
             review.disabled = unit.disabled;
         }
     });
+    // Siapkan isian dan cari unit saat halaman sewa baru dibuka.
     refreshFields();
     loadUnits();
 }
