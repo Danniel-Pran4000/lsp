@@ -3,7 +3,7 @@
 
 @section('content')
     <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Daftar akun</h1>
-    <p class="mt-3 text-sm leading-6 text-stone-600">Daftar sebagai penyewa. Admin akan meninjau akun Anda sebelum Anda dapat menyewa garasi.</p>
+    <p class="mt-3 text-sm leading-6 text-stone-600">Daftar sebagai penyewa.</p>
 
     <form class="mt-8 space-y-5" method="post" action="{{ route('registration.store') }}">
         @csrf

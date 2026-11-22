@@ -2,7 +2,7 @@
 @section('title', 'Pengguna')
 
 @section('content')
-    <p class="mb-5 text-sm text-stone-600">Periksa identitas sebelum menyetujui atau menolak pendaftaran.</p>
+    <p class="mb-5 text-sm text-stone-600">Lakukan verifikasi sebelum menyetujui atau menolak pendaftaran.</p>
     <div class="overflow-x-auto rounded-xl border border-stone-200">
         <table class="w-full min-w-max text-left text-sm">
             <thead class="bg-red-50 text-xs font-semibold tracking-wide text-red-900">
