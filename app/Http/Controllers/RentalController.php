@@ -10,6 +10,7 @@ use App\Services\RentalCalculator;
 use App\Services\RentalService;
 use App\Support\Rupiah;
 use Carbon\CarbonImmutable;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,6 +87,7 @@ class RentalController extends Controller
             ? $rental->proof_path
             : $rental->extensions()->findOrFail($extension)->proof_path;
 
+        /** @var LocalFilesystemAdapter $disk */
         $disk = Storage::disk('local');
         abort_unless($path && $disk->exists($path), 404);
         $mime = $disk->mimeType($path);
